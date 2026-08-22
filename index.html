@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iron Ledger</title>
+<meta name="description" content="Weekly strength-training log and progress tracker.">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9f9f7">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d0d0d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Iron Ledger">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style id="app-style">
+:root{
+  color-scheme: light;
+  --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f1ec; --surface-3:#eae8e1;
+  --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
+  --grid:#e1e0d9; --baseline-line:#c3c2b7; --border:rgba(11,11,11,0.10);
+  --accent:#2a78d6; --accent-wash:rgba(42,120,214,0.10); --accent-ink:#ffffff;
+  --delta-good:#006300; --delta-good-wash:rgba(12,163,12,0.12);
+  --delta-bad:#b23a3a; --delta-bad-wash:rgba(208,59,59,0.10);
+  --cat-1:#2a78d6; --cat-2:#eb6834; --cat-3:#1baf7a; --cat-4:#eda100; --cat-5:#e87ba4;
+  --cat-1-wash:rgba(42,120,214,0.10); --cat-2-wash:rgba(235,104,52,0.10);
+  --cat-3-wash:rgba(27,175,122,0.10); --cat-4-wash:rgba(237,161,0,0.14);
+  --cat-5-wash:rgba(232,123,164,0.14);
+  --font-display:'Oswald',"Arial Narrow",sans-serif;
+  --font-body:'IBM Plex Sans',system-ui,-apple-system,"Segoe UI",sans-serif;
+  --shadow: 0 1px 2px rgba(11,11,11,0.04), 0 6px 20px rgba(11,11,11,0.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#222220; --surface-3:#2a2a28;
+    --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8d86;
+    --grid:#2c2c2a; --baseline-line:#3f3f3c; --border:rgba(255,255,255,0.12);
+    --accent:#3987e5; --accent-wash:rgba(57,135,229,0.16); --accent-ink:#ffffff;
+    --delta-good:#2fc02f; --delta-good-wash:rgba(47,192,47,0.16);
+    --delta-bad:#e66767; --delta-bad-wash:rgba(230,103,103,0.16);
+    --cat-1:#3987e5; --cat-2:#d95926; --cat-3:#199e70; --cat-4:#c98500; --cat-5:#d55181;
+    --cat-1-wash:rgba(57,135,229,0.16); --cat-2-wash:rgba(217,89,38,0.18);
+    --cat-3-wash:rgba(25,158,112,0.18); --cat-4-wash:rgba(201,133,0,0.18);
+    --cat-5-wash:rgba(213,81,129,0.18);
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --page:#0d0d0d; --surface:#1a1a19; --surface-2:#222220; --surface-3:#2a2a28;
+  --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#8f8d86;
+  --grid:#2c2c2a; --baseline-line:#3f3f3c; --border:rgba(255,255,255,0.12);
+  --accent:#3987e5; --accent-wash:rgba(57,135,229,0.16); --accent-ink:#ffffff;
+  --delta-good:#2fc02f; --delta-good-wash:rgba(47,192,47,0.16);
+  --delta-bad:#e66767; --delta-bad-wash:rgba(230,103,103,0.16);
+  --cat-1:#3987e5; --cat-2:#d95926; --cat-3:#199e70; --cat-4:#c98500; --cat-5:#d55181;
+  --cat-1-wash:rgba(57,135,229,0.16); --cat-2-wash:rgba(217,89,38,0.18);
+  --cat-3-wash:rgba(25,158,112,0.18); --cat-4-wash:rgba(201,133,0,0.18);
+  --cat-5-wash:rgba(213,81,129,0.18);
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--page); color:var(--text-primary);
+  font-family:var(--font-body); font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{ background:var(--accent-wash); }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+.wrap{
+  max-width:920px; margin:0 auto;
+  padding:calc(28px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) calc(64px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left));
+}
+
+/* ---------- Masthead ---------- */
+.masthead{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+  flex-wrap:wrap; padding-bottom:20px; margin-bottom:24px;
+  border-bottom:1px solid var(--border);
+}
+.masthead h1{
+  font-family:var(--font-display); font-weight:700; text-transform:uppercase;
+  letter-spacing:0.02em; font-size:clamp(28px,5vw,40px); line-height:1;
+  margin:0 0 6px;
+}
+.masthead .tagline{ color:var(--text-secondary); font-size:13.5px; margin:0; }
+.week-controls{ display:flex; align-items:center; gap:10px; position:relative; flex-wrap:wrap; }
+.field-label{
+  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;
+  color:var(--text-muted); display:block; margin-bottom:4px;
+}
+select, input[type="date"], input[type="number"], input[type="text"]{
+  font-family:var(--font-body); font-size:14px; color:var(--text-primary);
+  background:var(--surface); border:1px solid var(--border); border-radius:7px;
+  padding:8px 10px; line-height:1.2;
+}
+select{ min-width:150px; }
+button{
+  font-family:var(--font-body); font-size:13.5px; font-weight:600; cursor:pointer;
+  border-radius:7px; border:1px solid var(--border); background:var(--surface);
+  color:var(--text-primary); padding:9px 14px; transition:background .12s ease, border-color .12s ease;
+}
+button:hover{ border-color:var(--text-muted); }
+.btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.btn-primary:hover{ filter:brightness(1.06); border-color:var(--accent); }
+.btn-ghost{ background:transparent; }
+.btn-danger{ color:var(--delta-bad); }
+
+.add-week-pop{
+  position:absolute; top:calc(100% + 8px); right:0; z-index:20;
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  box-shadow:var(--shadow); padding:14px; display:flex; flex-direction:column; gap:10px;
+  min-width:200px;
+}
+.add-week-pop[hidden]{ display:none; }
+.add-week-pop .row{ display:flex; gap:8px; }
+
+.save-status{ font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+.save-status .dot{ width:6px; height:6px; border-radius:50%; background:var(--text-muted); }
+.save-status.state-saving .dot{ background:var(--accent); }
+.save-status.state-saved .dot{ background:var(--delta-good); }
+.save-status.state-error .dot{ background:var(--delta-bad); }
+
+/* ---------- Empty state ---------- */
+.empty-card{
+  background:var(--surface); border:1px dashed var(--border); border-radius:12px;
+  padding:28px; text-align:center; color:var(--text-secondary); margin-bottom:28px;
+}
+.empty-card strong{ color:var(--text-primary); }
+
+/* ---------- Day cards ---------- */
+.day-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  margin-bottom:18px; overflow:hidden; box-shadow:var(--shadow);
+  border-left:4px solid var(--cat);
+}
+.day-card[data-day="push"]{ --cat:var(--cat-1); }
+.day-card[data-day="pull"]{ --cat:var(--cat-2); }
+.day-card[data-day="legs"]{ --cat:var(--cat-3); }
+.day-card[data-day="upper"]{ --cat:var(--cat-4); }
+.day-card[data-day="lower"]{ --cat:var(--cat-5); }
+
+.day-card__head{
+  display:flex; align-items:center; gap:10px; padding:16px 18px 12px;
+}
+.day-card__dot{ width:10px; height:10px; border-radius:50%; background:var(--cat); flex:none; }
+.day-card__head h2{
+  font-family:var(--font-display); font-weight:600; text-transform:uppercase;
+  letter-spacing:0.03em; font-size:19px; margin:0; color:var(--text-primary);
+}
+
+.table-scroll{ overflow-x:auto; }
+table.log-table{ width:100%; border-collapse:collapse; min-width:640px; }
+.log-table thead th{
+  text-align:left; font-size:10.5px; font-weight:600; text-transform:uppercase;
+  letter-spacing:0.06em; color:var(--text-muted); padding:8px 10px;
+  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+  background:var(--surface-2);
+}
+.log-table thead th.num, .log-table td.num{ text-align:left; }
+.log-table tbody td{
+  padding:10px; vertical-align:top; border-bottom:1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.log-table tbody tr:last-child td{ border-bottom:none; }
+.log-table tr.warmup td{ color:var(--text-muted); font-style:italic; background:var(--surface-2); }
+.log-table tr.warmup td.ex-name{ font-style:normal; font-weight:600; }
+.ex-name{ font-weight:600; color:var(--text-primary); font-size:14px; }
+.ex-note{ display:block; margin-top:3px; font-size:12px; color:var(--text-secondary); font-style:italic; font-weight:400; line-height:1.4; max-width:26ch; }
+.muted-dash{ color:var(--text-muted); }
+.cell-target, .cell-rest{ color:var(--text-secondary); font-size:13px; }
+
+.input-weight{ width:64px; }
+.input-reps{ width:100px; }
+.input-weight, .input-reps{ padding:7px 8px; font-size:13.5px; }
+.input-unit{ font-size:11px; color:var(--text-muted); margin-left:4px; }
+
+.pyr-stack{ display:flex; flex-direction:column; gap:6px; }
+.pyr-row{ display:flex; align-items:center; gap:6px; }
+.pyr-label{ font-size:10.5px; font-weight:600; color:var(--text-muted); width:16px; flex:none; text-align:right; }
+.input-sm{ width:60px; padding:5px 6px; font-size:13px; }
+
+.delta-badge{
+  display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px;
+  font-size:12.5px; font-weight:600; white-space:nowrap; font-variant-numeric: tabular-nums;
+}
+.delta-badge.good{ color:var(--delta-good); background:var(--delta-good-wash); }
+.delta-badge.bad{ color:var(--delta-bad); background:var(--delta-bad-wash); }
+.delta-badge.flat{ color:var(--text-secondary); background:var(--surface-2); }
+.delta-badge.baseline{ color:var(--text-muted); background:var(--surface-2); font-weight:500; }
+
+/* ---------- Progress / stats ---------- */
+.section-title{
+  font-family:var(--font-display); font-weight:600; text-transform:uppercase;
+  letter-spacing:0.03em; font-size:20px; margin:36px 0 4px;
+}
+.section-sub{ color:var(--text-secondary); font-size:13.5px; margin:0 0 18px; }
+
+.stat-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.stat-tile{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:14px 16px; box-shadow:var(--shadow);
+}
+.stat-tile .label{ font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:600; }
+.stat-tile .value{ font-family:var(--font-display); font-size:30px; font-weight:600; margin-top:4px; line-height:1; }
+.stat-tile .value .unit{ font-size:16px; font-family:var(--font-body); color:var(--text-secondary); font-weight:500; }
+
+.chip-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.chip{
+  border:1px solid var(--border); background:var(--surface); color:var(--text-secondary);
+  border-radius:999px; padding:7px 14px; font-size:13px; font-weight:600; cursor:pointer;
+}
+.chip .sw{ display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+.chip[aria-pressed="true"]{ background:var(--accent-wash); border-color:var(--accent); color:var(--text-primary); }
+
+.chart-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:18px 18px 10px; box-shadow:var(--shadow); position:relative;
+}
+.chart-card svg{ width:100%; height:auto; display:block; overflow:visible; }
+.chart-empty{ text-align:center; color:var(--text-muted); padding:48px 12px; font-size:14px; }
+.chart-legend{ display:flex; flex-wrap:wrap; gap:14px; margin:12px 2px 6px; }
+.chart-legend .item{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-secondary); }
+.chart-legend .sw{ width:10px; height:10px; border-radius:2px; }
+
+.tooltip{
+  position:absolute; pointer-events:none; background:var(--text-primary); color:var(--page);
+  font-size:12px; border-radius:8px; padding:8px 10px; box-shadow:var(--shadow);
+  transform:translate(-50%,-110%); white-space:nowrap; z-index:10; opacity:0; transition:opacity .08s ease;
+  line-height:1.5;
+}
+.tooltip.show{ opacity:1; }
+.tooltip .t-week{ font-weight:600; margin-bottom:3px; display:block; }
+.tooltip .t-row{ display:flex; align-items:center; gap:6px; }
+.tooltip .t-sw{ width:8px; height:8px; border-radius:50%; flex:none; }
+
+.table-toggle{ margin:10px 0 26px; }
+.raw-table{ display:none; margin-top:14px; }
+.raw-table.show{ display:block; }
+.raw-table table{ width:100%; border-collapse:collapse; font-size:13px; }
+.raw-table th, .raw-table td{ padding:7px 9px; border-bottom:1px solid var(--border); text-align:left; font-variant-numeric: tabular-nums; }
+.raw-table th{ color:var(--text-muted); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:0.05em; }
+
+footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-align:center; }
+
+@media (max-width:640px){
+  .stat-row{ grid-template-columns:1fr; }
+  .masthead{ align-items:flex-start; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script id="app-script">
+(function(){
+  "use strict";
+
+  var WORKOUTS = [
+    { id:"push", name:"Push",
+      warmup:{ name:"Warm-Up: Flat Bench", scheme:"3 sets — empty bar ×10, 60% ×5, 80% ×2", rest:"60s / 60s / 2 min" },
+      exercises:[
+        { id:"push-flat-bench", name:"Flat Bench Press", target:"Set 1: 6–8 (heaviest) · Set 2: 8–10 (–10%) · Set 3: 10–12 (–10%)", rest:"3 min", pyramidSets:3 },
+        { id:"push-incline-db", name:"Incline DB Press", target:"8–12", rest:"2 min" },
+        { id:"push-pec-deck", name:"Pec Deck", target:"10–15", rest:"90 sec" },
+        { id:"push-lateral-raise", name:"Lateral Raises", target:"10–15", rest:"60 sec" },
+        { id:"push-tricep-pushdown", name:"Tricep Pushdown", target:"10–12", rest:"90 sec" }
+      ]
+    },
+    { id:"pull", name:"Pull",
+      warmup:{ name:"Warm-Up: Pulldown", scheme:"Ramp — light ×10, 60% ×5, 80% ×2", rest:"60s / 60s / 2 min" },
+      exercises:[
+        { id:"pull-wide-lat-pulldown", name:"Wide Lat Pulldown", target:"8–12", rest:"2 min" },
+        { id:"pull-incline-db-row", name:"Incline DB Row", target:"8–12", rest:"2 min" },
+        { id:"pull-facepulls", name:"Facepulls", target:"12–15", rest:"60 sec" },
+        { id:"pull-spider-curl", name:"Spider Curl", target:"10–12", rest:"90 sec" },
+        { id:"pull-hammer-curl", name:"Hammer Curl", target:"10–12", rest:"90 sec" }
+      ]
+    },
+    { id:"legs", name:"Legs",
+      warmup:{ name:"Warm-Up: Squats", scheme:"Ramp — empty bar ×10, 60% ×5, 80% ×2", rest:"60s / 60s / 2 min" },
+      exercises:[
+        { id:"legs-barbell-squat", name:"Barbell Squats", target:"Set 1: 6–8 (heaviest) · Set 2: 8–10 (–10%) · Set 3: 10–12 (–10%)", rest:"3 min", pyramidSets:3 },
+        { id:"legs-lying-ham-curl", name:"Lying Ham Curl", target:"10–12", rest:"90 sec" },
+        { id:"legs-bulgarian-split-squat", name:"Bulgarian Split Squat", target:"8–12", rest:"2 min" },
+        { id:"legs-leg-extension", name:"Leg Extension", target:"12–15", rest:"90 sec" },
+        { id:"legs-calf-raises", name:"Calf Raises", target:"12–15", rest:"60 sec" }
+      ]
+    },
+    { id:"upper", name:"Upper",
+      warmup:{ name:"Warm-Up: DB Row", scheme:"Ramp — light DB ×10, medium DB ×5, heavy-ish DB ×2", rest:"60s / 60s / 2 min", note:"Prep the grip and lower back for heavy pulling." },
+      exercises:[
+        { id:"upper-unilateral-db-row", name:"Unilateral DB Row", target:"Set 1: 8–10 (heaviest) · Set 2: 10–12 (–10%) · Set 3: 10–12 (–10%)", rest:"2 min", note:"Pull heavy with maximum focus on a deep stretch.", pyramidSets:3 },
+        { id:"upper-incline-db-press", name:"Incline DB Press", target:"8–12", rest:"2 min", note:"One light prep set of 5, then working sets." },
+        { id:"upper-machine-press", name:"Machine Press", target:"8–12", rest:"2 min", note:"Fixed path — drive the front delts to failure." },
+        { id:"upper-wide-lat-pulldown", name:"Wide Lat Pulldown", target:"10–12", rest:"90 sec", note:"Shorter rest, higher reps to finish the back." },
+        { id:"upper-lateral-raise", name:"Lateral Raises", target:"12–15", rest:"60 sec", note:"High volume to cap off the side delts." },
+        { id:"upper-cable-oh-tricep", name:"Cable OH Tricep", target:"12–15", rest:"90 sec", note:"Full stretch on the long head for growth." }
+      ]
+    },
+    { id:"lower", name:"Lower",
+      warmup:{ name:"Warm-Up: Bulgarians", scheme:"Ramp — bodyweight ×10, light DBs ×5, medium DBs ×2", rest:"60s / 60s / 2 min", note:"Dial in balance before loading heavy dumbbells." },
+      exercises:[
+        { id:"lower-bulgarian-split-squat", name:"Bulgarian Split Squat", target:"8–12", rest:"2 min", note:"Done first while balance and core are fresh." },
+        { id:"lower-lying-ham-curl", name:"Lying Ham Curl", target:"10–15", rest:"90 sec", note:"High-volume hamstring work." },
+        { id:"lower-leg-extension", name:"Leg Extension", target:"12–15", rest:"90 sec", note:"Push the final set to mechanical failure." },
+        { id:"lower-calf-raises", name:"Calf Raises", target:"12–15", rest:"60 sec", note:"High reps, strict control, to finish the week." }
+      ]
+    }
+  ];
+
+  var EX_INDEX = {};
+  WORKOUTS.forEach(function(w){
+    w.exercises.forEach(function(e){ EX_INDEX[e.id] = Object.assign({ workoutId:w.id }, e); });
+  });
+  var ALL_EX_IDS = Object.keys(EX_INDEX);
+
+  var CAT_VAR = { push:"--cat-1", pull:"--cat-2", legs:"--cat-3", upper:"--cat-4", lower:"--cat-5" };
+
+  var todayISO = (function(){
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  })();
+
+  var STORAGE_KEY = "iron-ledger-state-v1";
+  var state = { weeks:[], logs:{} };
+  var selectedWeek = null;
+  var chartDay = "overall";
+
+  function css(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function parseReps(str){
+    if(!str) return [];
+    return str.split(/[,\s]+/).map(function(s){ return parseFloat(s); })
+      .filter(function(n){ return isFinite(n) && n >= 0; });
+  }
+  function sum(arr){ return arr.reduce(function(a,b){ return a+b; }, 0); }
+
+  function hasLog(exId, week){
+    var e = state.logs[exId] && state.logs[exId][week];
+    return !!(e && e.sets && e.sets.length);
+  }
+  function metric(exId, week){
+    var e = state.logs[exId] && state.logs[exId][week];
+    if(!e || !e.sets || !e.sets.length) return null;
+    var total = 0;
+    e.sets.forEach(function(s){
+      var w = (s.weight && s.weight > 0) ? s.weight : 1;
+      total += w * s.reps;
+    });
+    return total;
+  }
+  function baselineWeek(exId){
+    for(var i=0;i<state.weeks.length;i++){
+      if(hasLog(exId, state.weeks[i])) return state.weeks[i];
+    }
+    return null;
+  }
+  function deltaPct(exId, week){
+    var base = baselineWeek(exId);
+    if(!base || week === base) return null;
+    var bm = metric(exId, base), cm = metric(exId, week);
+    if(bm == null || cm == null) return null;
+    return ((cm - bm) / bm) * 100;
+  }
+  function lastKnownDelta(exId, uptoWeek){
+    var base = baselineWeek(exId);
+    if(!base) return null;
+    var idx = state.weeks.indexOf(uptoWeek);
+    if(idx < 0) return null;
+    for(var i=idx;i>=0;i--){
+      var wk = state.weeks[i];
+      if(hasLog(exId, wk)){
+        if(wk === base) return 0;
+        return deltaPct(exId, wk);
+      }
+    }
+    return null;
+  }
+
+  function formatWeek(iso){
+    var d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(undefined, { month:"short", day:"numeric" });
+  }
+  function formatWeekFull(iso){
+    var d = new Date(iso + "T00:00:00");
+    return "Week of " + d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+  }
+
+  function fmtPct(v){
+    var r = Math.round(v);
+    return (r > 0 ? "+" : "") + r + "%";
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[c];
+    });
+  }
+
+  /* ---------------- persistence (this device's browser storage) ---------------- */
+
+  function setSaveStatus(kind){
+    var el = document.getElementById("save-status");
+    if(!el) return;
+    el.className = "save-status state-" + kind;
+    var msg = {
+      idle:"", saved:"Saved on this device", error:"Couldn't save — storage may be full or blocked"
+    }[kind] || "";
+    el.querySelector(".txt").textContent = msg;
+  }
+
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.weeks && parsed.logs) return parsed;
+      }
+    } catch(e){}
+    return { weeks:[], logs:{} };
+  }
+
+  function scheduleSave(){ saveState(); }
+
+  function saveState(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      setSaveStatus("saved");
+    } catch(e){
+      setSaveStatus("error");
+    }
+  }
+
+  function ensureSelectedWeek(){
+    if(!state.weeks.length){ selectedWeek = null; return; }
+    if(!selectedWeek || state.weeks.indexOf(selectedWeek) === -1){
+      selectedWeek = state.weeks[state.weeks.length - 1];
+    }
+  }
+
+  /* ---------------- rendering: shell ---------------- */
+
+  function dayCardHTML(w){
+    var rows = "";
+    rows += "<tr class=\"warmup\">"
+      + "<td class=\"ex-name\">" + esc(w.warmup.name) + (w.warmup.note ? "<span class=\"ex-note\">" + esc(w.warmup.note) + "</span>" : "") + "</td>"
+      + "<td class=\"cell-target\">" + esc(w.warmup.scheme) + "</td>"
+      + "<td class=\"cell-rest\">" + esc(w.warmup.rest) + "</td>"
+      + "<td class=\"muted-dash\">—</td><td class=\"muted-dash\">—</td><td class=\"muted-dash\">—</td>"
+      + "</tr>";
+
+    w.exercises.forEach(function(e){
+      var entry = (state.logs[e.id] && state.logs[e.id][selectedWeek]) || null;
+      var base = baselineWeek(e.id);
+      var badgeHTML;
+      if(selectedWeek && base === selectedWeek){
+        badgeHTML = "<span class=\"delta-badge baseline\" id=\"delta-" + e.id + "\">Baseline</span>";
+      } else {
+        var d = selectedWeek ? deltaPct(e.id, selectedWeek) : null;
+        badgeHTML = "<span class=\"delta-badge " + deltaClass(d) + "\" id=\"delta-" + e.id + "\">" + deltaLabel(d) + "</span>";
+      }
+
+      var weightCell, repsCell;
+      if(e.pyramidSets){
+        var n = e.pyramidSets, wRows = "", rRows = "";
+        for(var i=0;i<n;i++){
+          var s = (entry && entry.sets && entry.sets[i]) ? entry.sets[i] : null;
+          var wv = (s && s.weight != null) ? s.weight : "";
+          var rv = (s && s.reps != null) ? s.reps : "";
+          wRows += "<div class=\"pyr-row\"><span class=\"pyr-label\">S" + (i+1) + "</span><input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight input-sm\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" data-set=\"" + i + "\" value=\"" + wv + "\"></div>";
+          rRows += "<div class=\"pyr-row\"><input type=\"number\" step=\"1\" min=\"0\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + e.id + "\" data-field=\"reps\" data-set=\"" + i + "\" value=\"" + rv + "\"></div>";
+        }
+        weightCell = "<div class=\"pyr-stack\">" + wRows + "</div>";
+        repsCell = "<div class=\"pyr-stack\">" + rRows + "</div>";
+      } else {
+        var weightVal = (entry && entry.sets && entry.sets.length && entry.sets[0].weight != null) ? entry.sets[0].weight : "";
+        var repsVal = (entry && entry.sets && entry.sets.length) ? entry.sets.map(function(s){ return s.reps; }).join(",") : "";
+        weightCell = "<input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" value=\"" + weightVal + "\">";
+        repsCell = "<input type=\"text\" class=\"input-reps\" placeholder=\"e.g. 8,10,12\" data-ex=\"" + e.id + "\" data-field=\"reps\" value=\"" + esc(repsVal) + "\">";
+      }
+
+      rows += "<tr>"
+        + "<td class=\"ex-name\">" + esc(e.name) + (e.note ? "<span class=\"ex-note\">" + esc(e.note) + "</span>" : "") + "</td>"
+        + "<td class=\"cell-target\">" + esc(e.target) + "</td>"
+        + "<td class=\"cell-rest\">" + esc(e.rest) + "</td>"
+        + "<td>" + weightCell + "</td>"
+        + "<td>" + repsCell + "</td>"
+        + "<td>" + badgeHTML + "</td>"
+        + "</tr>";
+    });
+
+    return "<section class=\"day-card\" data-day=\"" + w.id + "\">"
+      + "<div class=\"day-card__head\"><span class=\"day-card__dot\"></span><h2>" + esc(w.name) + "</h2></div>"
+      + "<div class=\"table-scroll\"><table class=\"log-table\"><thead><tr>"
+      + "<th>Exercise</th><th>Target reps</th><th>Rest</th><th>Weight</th><th>Reps (actual)</th><th>&Delta; vs baseline</th>"
+      + "</tr></thead><tbody>" + rows + "</tbody></table></div>"
+      + "</section>";
+  }
+
+  function deltaClass(d){
+    if(d == null) return "flat";
+    if(d > 0.5) return "good";
+    if(d < -0.5) return "bad";
+    return "flat";
+  }
+  function deltaLabel(d){
+    if(d == null) return "—";
+    var arrow = d > 0.5 ? "▲" : (d < -0.5 ? "▼" : "▬");
+    return arrow + " " + fmtPct(d);
+  }
+
+  function weekOptionsHTML(){
+    var opts = "";
+    for(var i = state.weeks.length - 1; i >= 0; i--){
+      var wk = state.weeks[i];
+      opts += "<option value=\"" + wk + "\"" + (wk === selectedWeek ? " selected" : "") + ">" + esc(formatWeekFull(wk)) + "</option>";
+    }
+    return opts;
+  }
+
+  function renderShell(){
+    ensureSelectedWeek();
+    var app = document.getElementById("app");
+
+    var header = "<header class=\"masthead\">"
+      + "<div><h1>Iron Ledger</h1><p class=\"tagline\">Push · Pull · Legs · Upper · Lower — logged weekly, tracked against your own baseline.</p></div>"
+      + "<div class=\"week-controls\">";
+
+    if(state.weeks.length){
+      header += "<div><span class=\"field-label\">Viewing</span><select id=\"week-select\">" + weekOptionsHTML() + "</select></div>";
+    }
+    header += "<div style=\"position:relative;\">"
+      + "<button class=\"btn-primary\" id=\"btn-add-week\" type=\"button\">+ Log new week</button>"
+      + "<div class=\"add-week-pop\" id=\"add-week-pop\" hidden>"
+      + "<div><span class=\"field-label\">Week date</span><input type=\"date\" id=\"new-week-date\" value=\"" + suggestNextDate() + "\"></div>"
+      + "<div class=\"row\"><button class=\"btn-primary\" id=\"confirm-add-week\" type=\"button\" style=\"flex:1;\">Start week</button>"
+      + "<button class=\"btn-ghost\" id=\"cancel-add-week\" type=\"button\">Cancel</button></div>"
+      + "</div></div>";
+
+    if(state.weeks.length){
+      header += "<button class=\"btn-ghost btn-danger\" id=\"btn-delete-week\" type=\"button\" title=\"Delete the selected week's entries\">Delete week</button>";
+    }
+    header += "<div class=\"save-status\" id=\"save-status\"><span class=\"dot\"></span><span class=\"txt\"></span></div>";
+    header += "</div></header>";
+
+    var body;
+    if(!state.weeks.length){
+      body = "<div class=\"empty-card\"><strong>No weeks logged yet.</strong><br>Click “+ Log new week” to record your first session — weight and reps for each lift. Once you've logged a second week, Iron Ledger starts scoring your improvement.</div>";
+    } else {
+      body = cardsHTML();
+    }
+
+    body += "<h2 class=\"section-title\">Progress</h2>"
+      + "<p class=\"section-sub\">Percent change vs. the first week you logged each lift — weight × total reps, so a heavier set and a higher-rep set both count.</p>"
+      + "<div id=\"progress-region\"></div>"
+      + "<footer class=\"foot\">Iron Ledger — your log, saved in this browser's storage.</footer>";
+
+    app.innerHTML = header + body;
+    wireShellEvents();
+    renderProgress();
+  }
+
+  function cardsHTML(){
+    var html = "";
+    WORKOUTS.forEach(function(w){ html += dayCardHTML(w); });
+    return html;
+  }
+
+  function suggestNextDate(){
+    if(!state.weeks.length) return todayISO;
+    var last = state.weeks[state.weeks.length - 1];
+    var d = new Date(last + "T00:00:00");
+    d.setDate(d.getDate() + 7);
+    var iso = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+    return iso > todayISO ? todayISO : iso;
+  }
+
+  function wireShellEvents(){
+    var sel = document.getElementById("week-select");
+    if(sel){
+      sel.addEventListener("change", function(){
+        selectedWeek = sel.value;
+        renderShell();
+      });
+    }
+
+    var addBtn = document.getElementById("btn-add-week");
+    var pop = document.getElementById("add-week-pop");
+    addBtn.addEventListener("click", function(){ pop.hidden = !pop.hidden; });
+    document.getElementById("cancel-add-week").addEventListener("click", function(){ pop.hidden = true; });
+    document.getElementById("confirm-add-week").addEventListener("click", function(){
+      var dateInput = document.getElementById("new-week-date");
+      var val = dateInput.value || todayISO;
+      if(state.weeks.indexOf(val) === -1){
+        state.weeks.push(val);
+        state.weeks.sort();
+      }
+      selectedWeek = val;
+      pop.hidden = true;
+      renderShell();
+      scheduleSave();
+    });
+
+    var delBtn = document.getElementById("btn-delete-week");
+    if(delBtn){
+      delBtn.addEventListener("click", function(){
+        if(!selectedWeek) return;
+        if(!confirm("Delete all entries logged for " + formatWeekFull(selectedWeek) + "? This can't be undone.")) return;
+        state.weeks = state.weeks.filter(function(w){ return w !== selectedWeek; });
+        ALL_EX_IDS.forEach(function(id){
+          if(state.logs[id]) delete state.logs[id][selectedWeek];
+        });
+        selectedWeek = null;
+        renderShell();
+        scheduleSave();
+      });
+    }
+
+    document.querySelectorAll("input[data-ex]").forEach(function(input){
+      input.addEventListener("input", function(){ onFieldInput(input); });
+    });
+
+    setSaveStatus("idle");
+  }
+
+  document.addEventListener("click", function(ev){
+    var pop = document.getElementById("add-week-pop");
+    var addBtn = document.getElementById("btn-add-week");
+    if(pop && !pop.hidden && !pop.contains(ev.target) && ev.target !== addBtn){
+      pop.hidden = true;
+    }
+  });
+
+  function onFieldInput(input){
+    var exId = input.dataset.ex;
+    var def = EX_INDEX[exId];
+    var row = input.closest("tr");
+    var sets = [];
+
+    if(def.pyramidSets){
+      for(var i=0;i<def.pyramidSets;i++){
+        var wIn = row.querySelector("input[data-field=\"weight\"][data-set=\"" + i + "\"]");
+        var rIn = row.querySelector("input[data-field=\"reps\"][data-set=\"" + i + "\"]");
+        var w = (wIn.value === "") ? null : parseFloat(wIn.value);
+        var r = (rIn.value === "") ? null : parseInt(rIn.value, 10);
+        if(r != null && isFinite(r) && r >= 0){
+          sets.push({ weight: (w != null && isFinite(w)) ? w : null, reps: r });
+        }
+      }
+    } else {
+      var weightInput = row.querySelector("input[data-field=\"weight\"]");
+      var repsInput = row.querySelector("input[data-field=\"reps\"]");
+      var weight = weightInput.value === "" ? null : parseFloat(weightInput.value);
+      var reps = parseReps(repsInput.value);
+      sets = reps.map(function(r){ return { weight: (weight != null && isFinite(weight)) ? weight : null, reps: r }; });
+    }
+
+    if(!state.logs[exId]) state.logs[exId] = {};
+    if(!sets.length){
+      delete state.logs[exId][selectedWeek];
+    } else {
+      state.logs[exId][selectedWeek] = { sets: sets };
+    }
+
+    var base = baselineWeek(exId);
+    var badge = document.getElementById("delta-" + exId);
+    if(badge){
+      if(base === selectedWeek){
+        badge.className = "delta-badge baseline";
+        badge.textContent = "Baseline";
+      } else {
+        var d = deltaPct(exId, selectedWeek);
+        badge.className = "delta-badge " + deltaClass(d);
+        badge.textContent = deltaLabel(d);
+      }
+    }
+
+    renderProgress();
+    scheduleSave();
+  }
+
+  /* ---------------- progress: stats + chart ---------------- */
+
+  function computeOverallSeries(){
+    return state.weeks.map(function(wk){
+      var vals = [];
+      ALL_EX_IDS.forEach(function(id){
+        var v = lastKnownDelta(id, wk);
+        if(v != null) vals.push(v);
+      });
+      return vals.length ? (sum(vals) / vals.length) : null;
+    });
+  }
+
+  function computeDaySeries(dayId){
+    var w = WORKOUTS.filter(function(w){ return w.id === dayId; })[0];
+    if(!w) return [];
+    return w.exercises.map(function(e){
+      return {
+        id: e.id, name: e.name,
+        values: state.weeks.map(function(wk){ return hasLog(e.id, wk) ? deltaPctOrZero(e.id, wk) : null; })
+      };
+    });
+  }
+  function deltaPctOrZero(id, wk){
+    var base = baselineWeek(id);
+    if(wk === base) return 0;
+    return deltaPct(id, wk);
+  }
+
+  function renderProgress(){
+    var region = document.getElementById("progress-region");
+    if(!region) return;
+
+    var overall = computeOverallSeries();
+    var lastOverall = null;
+    for(var i = overall.length - 1; i >= 0; i--){ if(overall[i] != null){ lastOverall = overall[i]; break; } }
+    var trackedCount = ALL_EX_IDS.filter(function(id){ return baselineWeek(id); }).length;
+
+    var stats = "<div class=\"stat-row\">"
+      + statTile("Weeks logged", state.weeks.length, "")
+      + statTile("Lifts tracked", trackedCount, "")
+      + statTile("Overall improvement", lastOverall == null ? "—" : fmtPct(lastOverall), "", lastOverall)
+      + "</div>";
+
+    var chips = "<div class=\"chip-row\">" + chip("overall", "Overall", null) +
+      WORKOUTS.map(function(w){ return chip(w.id, w.name, CAT_VAR[w.id]); }).join("") + "</div>";
+
+    var chartHTML;
+    if(state.weeks.length < 1){
+      chartHTML = "<div class=\"chart-card\"><div class=\"chart-empty\">Log your first week to start the chart.</div></div>";
+    } else if(state.weeks.length === 1){
+      chartHTML = "<div class=\"chart-card\"><div class=\"chart-empty\">One week logged — this is your baseline. Add a second week to see a trend line.</div></div>";
+    } else {
+      chartHTML = "<div class=\"chart-card\" id=\"chart-card\"></div>";
+    }
+
+    region.innerHTML = stats + chips + chartHTML
+      + "<div class=\"table-toggle\"><button class=\"btn-ghost\" id=\"toggle-table\" type=\"button\">View as table</button></div>"
+      + "<div class=\"raw-table\" id=\"raw-table\"></div>";
+
+    document.querySelectorAll(".chip").forEach(function(c){
+      c.addEventListener("click", function(){ chartDay = c.dataset.day; renderProgress(); });
+    });
+    document.getElementById("toggle-table").addEventListener("click", function(){
+      var t = document.getElementById("raw-table");
+      t.classList.toggle("show");
+      if(t.classList.contains("show")) t.innerHTML = rawTableHTML();
+    });
+
+    if(state.weeks.length >= 2) drawChart();
+  }
+
+  function statTile(label, value, unit, delta){
+    var cls = "";
+    if(delta != null){
+      cls = delta > 0.5 ? "good" : (delta < -0.5 ? "bad" : "");
+    }
+    return "<div class=\"stat-tile\"><div class=\"label\">" + esc(label) + "</div>"
+      + "<div class=\"value" + (cls ? " " + cls : "") + "\" style=\"" + (cls === "good" ? "color:var(--delta-good)" : cls === "bad" ? "color:var(--delta-bad)" : "") + "\">" + esc(value) + (unit ? " <span class=\"unit\">" + esc(unit) + "</span>" : "") + "</div></div>";
+  }
+
+  function chip(dayId, label, colorVar){
+    var sw = colorVar ? "<span class=\"sw\" style=\"background:var(" + colorVar + ")\"></span>" : "";
+    return "<button type=\"button\" class=\"chip\" data-day=\"" + dayId + "\" aria-pressed=\"" + (chartDay === dayId) + "\">" + sw + esc(label) + "</button>";
+  }
+
+  function rawTableHTML(){
+    var cols, seriesList;
+    if(chartDay === "overall"){
+      seriesList = [{ name:"Overall", values: computeOverallSeries() }];
+    } else {
+      seriesList = computeDaySeries(chartDay);
+    }
+    var head = "<tr><th>Week</th>" + seriesList.map(function(s){ return "<th>" + esc(s.name) + "</th>"; }).join("") + "</tr>";
+    var rows = state.weeks.map(function(wk, i){
+      return "<tr><td>" + esc(formatWeek(wk)) + "</td>" + seriesList.map(function(s){
+        var v = s.values[i];
+        return "<td>" + (v == null ? "—" : fmtPct(v)) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    return "<table>" + head + rows + "</table>";
+  }
+
+  /* ---------------- chart (SVG) ---------------- */
+
+  function niceStep(rangeMax){
+    var steps = [2,5,10,20,25,50,100,200,250,500,1000];
+    for(var i=0;i<steps.length;i++){
+      if(rangeMax / steps[i] <= 6) return steps[i];
+    }
+    return Math.ceil(rangeMax / 6 / 100) * 100;
+  }
+
+  function drawChart(){
+    var card = document.getElementById("chart-card");
+    if(!card) return;
+
+    var seriesList, colorFor;
+    if(chartDay === "overall"){
+      seriesList = [{ id:"overall", name:"Overall improvement", values: computeOverallSeries(), color:"accent" }];
+      colorFor = function(){ return css("--accent"); };
+    } else {
+      seriesList = computeDaySeries(chartDay);
+      var order = ["--cat-1","--cat-2","--cat-3","--cat-4","--cat-5","--cat-1","--cat-2"];
+      seriesList = seriesList.map(function(s, i){ return Object.assign({}, s, { color: order[i % order.length] }); });
+      colorFor = function(s){ return css(s.color); };
+    }
+
+    var weeks = state.weeks;
+    var n = weeks.length;
+    var W = 760, H = 320, M = { top:18, right:18, bottom:34, left:46 };
+    var plotW = W - M.left - M.right, plotH = H - M.top - M.bottom;
+
+    var allVals = [];
+    seriesList.forEach(function(s){ s.values.forEach(function(v){ if(v != null) allVals.push(v); }); });
+    if(!allVals.length) allVals = [0];
+    var maxAbs = Math.max(Math.abs(Math.min.apply(null, allVals)), Math.abs(Math.max.apply(null, allVals)), 10);
+    var step = niceStep(maxAbs);
+    var domainMax = Math.ceil(maxAbs / step) * step;
+    var domainMin = -domainMax;
+    if(Math.min.apply(null, allVals) >= 0) domainMin = 0;
+    if(Math.max.apply(null, allVals) <= 0) domainMax = 0;
+    if(domainMax === domainMin){ domainMax = step; domainMin = -step; }
+
+    function xAt(i){ return M.left + (n <= 1 ? plotW/2 : (i/(n-1)) * plotW); }
+    function yAt(v){ return M.top + (domainMax - v) / (domainMax - domainMin) * plotH; }
+
+    var ticks = [];
+    for(var t = Math.ceil(domainMin/step)*step; t <= domainMax + 0.001; t += step) ticks.push(Math.round(t));
+
+    var svg = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Improvement chart\">";
+
+    ticks.forEach(function(t){
+      var y = yAt(t);
+      svg += "<line x1=\"" + M.left + "\" x2=\"" + (W - M.right) + "\" y1=\"" + y + "\" y2=\"" + y + "\" stroke=\"" + (t === 0 ? css("--baseline-line") : css("--grid")) + "\" stroke-width=\"1\"></line>";
+      svg += "<text x=\"" + (M.left - 8) + "\" y=\"" + (y + 4) + "\" text-anchor=\"end\" font-size=\"10.5\" fill=\"" + css("--text-muted") + "\" font-family=\"" + css("--font-body") + "\">" + t + "%</text>";
+    });
+
+    weeks.forEach(function(wk, i){
+      if(n > 8 && i % Math.ceil(n/8) !== 0 && i !== n-1) return;
+      svg += "<text x=\"" + xAt(i) + "\" y=\"" + (H - M.bottom + 18) + "\" text-anchor=\"middle\" font-size=\"10.5\" fill=\"" + css("--text-muted") + "\" font-family=\"" + css("--font-body") + "\">" + esc(formatWeek(wk)) + "</text>";
+    });
+
+    seriesList.forEach(function(s){
+      var color = colorFor(s);
+      var d = "", started = false;
+      s.values.forEach(function(v, i){
+        if(v == null){ started = false; return; }
+        var x = xAt(i), y = yAt(v);
+        d += (started ? " L " : " M ") + x + " " + y;
+        started = true;
+      });
+      if(d) svg += "<path d=\"" + d + "\" fill=\"none\" stroke=\"" + color + "\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path>";
+
+      var lastIdx = -1;
+      s.values.forEach(function(v, i){
+        if(v == null) return;
+        var x = xAt(i), y = yAt(v);
+        var r = (i === s.values.length - 1 || (function(){ for(var j=i+1;j<s.values.length;j++){ if(s.values[j]!=null) return false; } return true; })()) ? 5 : 4;
+        svg += "<circle cx=\"" + x + "\" cy=\"" + y + "\" r=\"" + r + "\" fill=\"" + color + "\" stroke=\"" + css("--surface") + "\" stroke-width=\"2\"></circle>";
+        lastIdx = i;
+      });
+      if(lastIdx >= 0 && (seriesList.length <= 4)){
+        var lv = s.values[lastIdx];
+        svg += "<text x=\"" + (xAt(lastIdx) + 8) + "\" y=\"" + (yAt(lv) - 8) + "\" font-size=\"11\" font-weight=\"600\" fill=\"" + css("--text-secondary") + "\" font-family=\"" + css("--font-body") + "\">" + fmtPct(lv) + "</text>";
+      }
+    });
+
+    svg += "<rect id=\"hover-rect\" x=\"" + M.left + "\" y=\"" + M.top + "\" width=\"" + plotW + "\" height=\"" + plotH + "\" fill=\"transparent\"></rect>";
+    svg += "<line id=\"crosshair\" x1=\"0\" x2=\"0\" y1=\"" + M.top + "\" y2=\"" + (H - M.bottom) + "\" stroke=\"" + css("--text-muted") + "\" stroke-width=\"1\" opacity=\"0\"></line>";
+    svg += "</svg>";
+
+    var legend = "";
+    if(seriesList.length > 1){
+      legend = "<div class=\"chart-legend\">" + seriesList.map(function(s){
+        return "<span class=\"item\"><span class=\"sw\" style=\"background:" + colorFor(s) + "\"></span>" + esc(s.name) + "</span>";
+      }).join("") + "</div>";
+    }
+
+    card.innerHTML = svg + legend + "<div class=\"tooltip\" id=\"chart-tooltip\"></div>";
+
+    var svgEl = card.querySelector("svg");
+    var hoverRect = card.querySelector("#hover-rect");
+    var crosshair = card.querySelector("#crosshair");
+    var tooltip = card.querySelector("#chart-tooltip");
+
+    hoverRect.addEventListener("mousemove", function(ev){
+      var pt = svgEl.createSVGPoint();
+      pt.x = ev.clientX; pt.y = ev.clientY;
+      var loc = pt.matrixTransform(svgEl.getScreenCTM().inverse());
+      var idx = n <= 1 ? 0 : Math.round((loc.x - M.left) / plotW * (n - 1));
+      idx = Math.max(0, Math.min(n - 1, idx));
+      var x = xAt(idx);
+      crosshair.setAttribute("x1", x); crosshair.setAttribute("x2", x); crosshair.setAttribute("opacity", "1");
+
+      var rows = seriesList.map(function(s){
+        var v = s.values[idx];
+        if(v == null) return "";
+        return "<span class=\"t-row\"><span class=\"t-sw\" style=\"background:" + colorFor(s) + "\"></span>" + esc(s.name) + ": " + fmtPct(v) + "</span>";
+      }).filter(Boolean).join("");
+      if(!rows){ tooltip.classList.remove("show"); return; }
+      tooltip.innerHTML = "<span class=\"t-week\">" + esc(formatWeekFull(weeks[idx])) + "</span>" + rows;
+
+      var rect = card.getBoundingClientRect();
+      var svgRect = svgEl.getBoundingClientRect();
+      var pxRatio = svgRect.width / W;
+      var leftPos = (x * pxRatio) + (svgRect.left - rect.left);
+      var topPos = svgRect.top - rect.top;
+      tooltip.style.left = leftPos + "px";
+      tooltip.style.top = topPos + "px";
+      tooltip.classList.add("show");
+    });
+    hoverRect.addEventListener("mouseleave", function(){
+      crosshair.setAttribute("opacity", "0");
+      tooltip.classList.remove("show");
+    });
+  }
+
+  /* ---------------- boot ---------------- */
+
+  function boot(){
+    state = loadState();
+    ensureSelectedWeek();
+    renderShell();
+
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
