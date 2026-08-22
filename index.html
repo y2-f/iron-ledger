@@ -157,36 +157,56 @@ button:hover{ border-color:var(--text-muted); }
   letter-spacing:0.03em; font-size:19px; margin:0; color:var(--text-primary);
 }
 
-.table-scroll{ overflow-x:auto; }
-table.log-table{ width:100%; border-collapse:collapse; min-width:640px; }
-.log-table thead th{
-  text-align:left; font-size:10.5px; font-weight:600; text-transform:uppercase;
-  letter-spacing:0.06em; color:var(--text-muted); padding:8px 10px;
-  border-top:1px solid var(--border); border-bottom:1px solid var(--border);
-  background:var(--surface-2);
+.warmup-line{
+  display:flex; flex-direction:column; gap:2px; padding:12px 18px;
+  background:var(--surface-2); border-bottom:1px solid var(--border);
 }
-.log-table thead th.num, .log-table td.num{ text-align:left; }
-.log-table tbody td{
-  padding:10px; vertical-align:top; border-bottom:1px solid var(--border);
-  font-variant-numeric: tabular-nums;
-}
-.log-table tbody tr:last-child td{ border-bottom:none; }
-.log-table tr.warmup td{ color:var(--text-muted); font-style:italic; background:var(--surface-2); }
-.log-table tr.warmup td.ex-name{ font-style:normal; font-weight:600; }
-.ex-name{ font-weight:600; color:var(--text-primary); font-size:14px; }
-.ex-note{ display:block; margin-top:3px; font-size:12px; color:var(--text-secondary); font-style:italic; font-weight:400; line-height:1.4; max-width:26ch; }
-.muted-dash{ color:var(--text-muted); }
-.cell-target, .cell-rest{ color:var(--text-secondary); font-size:13px; }
+.warmup-name{ font-weight:600; font-size:13px; color:var(--text-secondary); }
+.warmup-meta{ font-size:12px; color:var(--text-muted); font-style:italic; }
 
-.input-weight{ width:64px; }
-.input-reps{ width:100px; }
-.input-weight, .input-reps{ padding:7px 8px; font-size:13.5px; }
+/* ---------- Accordion exercise rows ---------- */
+.acc-list{ }
+.acc-item{ border-bottom:1px solid var(--border); }
+.acc-item:last-child{ border-bottom:none; }
+.acc-head{
+  display:flex; align-items:center; gap:10px; width:100%; box-sizing:border-box;
+  background:none; border:none; margin:0; padding:14px 18px;
+  font:inherit; color:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.acc-head:hover{ background:var(--surface-2); }
+.acc-chevron{
+  flex:none; width:14px; text-align:center; color:var(--text-muted); font-size:13px;
+  transition:transform .18s ease;
+}
+.acc-item.expanded .acc-chevron{ transform:rotate(90deg); color:var(--text-secondary); }
+.acc-head-main{ display:flex; flex-direction:column; gap:3px; flex:1 1 auto; min-width:0; }
+.acc-name{ font-weight:600; font-size:14.5px; color:var(--text-primary); }
+.acc-meta{ font-size:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.acc-head-side{ display:flex; align-items:center; gap:8px; flex:none; }
+.acc-summary{
+  font-size:12.5px; color:var(--text-secondary); font-variant-numeric:tabular-nums;
+  max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.acc-body-wrap{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .2s ease; }
+.acc-item.expanded .acc-body-wrap{ grid-template-rows:1fr; }
+.acc-body{ overflow:hidden; min-height:0; }
+.acc-body-inner{ padding:0 18px 18px 42px; display:flex; flex-direction:column; gap:12px; }
+.acc-note{ margin:0; font-size:12.5px; color:var(--text-secondary); font-style:italic; line-height:1.4; }
+
+.acc-fields{ display:flex; gap:16px; flex-wrap:wrap; }
+.field-group{ display:flex; flex-direction:column; gap:5px; }
+
+.input-weight{ width:92px; }
+.input-reps{ width:150px; }
+.input-weight, .input-reps{ padding:10px 12px; font-size:15px; }
 .input-unit{ font-size:11px; color:var(--text-muted); margin-left:4px; }
 
-.pyr-stack{ display:flex; flex-direction:column; gap:6px; }
-.pyr-row{ display:flex; align-items:center; gap:6px; }
-.pyr-label{ font-size:10.5px; font-weight:600; color:var(--text-muted); width:16px; flex:none; text-align:right; }
-.input-sm{ width:60px; padding:5px 6px; font-size:13px; }
+.pyr-stack{ display:flex; flex-direction:column; gap:8px; }
+.pyr-row{ display:flex; align-items:center; gap:8px; }
+.pyr-label{ font-size:12px; font-weight:600; color:var(--text-muted); width:44px; flex:none; }
+.input-sm{ padding:8px 10px; font-size:14px; }
+.pyr-row .input-weight.input-sm{ width:78px; }
+.pyr-row .input-reps.input-sm{ width:72px; }
 
 .delta-badge{
   display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px;
@@ -258,9 +278,29 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 @media (prefers-reduced-motion: reduce){
   *{ transition:none !important; }
 }
+
+/* ---------- Portrait-only guard (phones) ---------- */
+.landscape-guard{ display:none; }
+@media (orientation: landscape) and (max-height: 560px){
+  body > .wrap{ display:none; }
+  .landscape-guard{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px; position:fixed; inset:0; padding:32px; text-align:center;
+    background:var(--page); color:var(--text-primary); z-index:9999;
+  }
+  .landscape-guard h2{
+    font-family:var(--font-display); font-weight:600; text-transform:uppercase;
+    letter-spacing:0.03em; font-size:20px; margin:0;
+  }
+  .landscape-guard p{ margin:0; color:var(--text-secondary); font-size:14px; max-width:32ch; }
+}
 </style>
 </head>
 <body>
+<div class="landscape-guard">
+  <h2>Rotate to portrait</h2>
+  <p>Iron Ledger is designed for portrait use only.</p>
+</div>
 <div class="wrap" id="app"></div>
 <script id="app-script">
 (function(){
@@ -336,6 +376,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
   var state = { weeks:[], logs:{} };
   var selectedWeek = null;
   var chartDay = "overall";
+  var expandedExercise = null;
 
   function css(name){
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -453,15 +494,22 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 
   /* ---------------- rendering: shell ---------------- */
 
-  function dayCardHTML(w){
-    var rows = "";
-    rows += "<tr class=\"warmup\">"
-      + "<td class=\"ex-name\">" + esc(w.warmup.name) + (w.warmup.note ? "<span class=\"ex-note\">" + esc(w.warmup.note) + "</span>" : "") + "</td>"
-      + "<td class=\"cell-target\">" + esc(w.warmup.scheme) + "</td>"
-      + "<td class=\"cell-rest\">" + esc(w.warmup.rest) + "</td>"
-      + "<td class=\"muted-dash\">—</td><td class=\"muted-dash\">—</td><td class=\"muted-dash\">—</td>"
-      + "</tr>";
+  function summarizeEntry(exId, week){
+    var entry = state.logs[exId] && state.logs[exId][week];
+    if(!entry || !entry.sets || !entry.sets.length) return "";
+    return entry.sets.map(function(s){
+      var w = (s.weight != null) ? (s.weight + "kg") : "bw";
+      return w + "×" + s.reps;
+    }).join(" · ");
+  }
 
+  function dayCardHTML(w){
+    var warmupHTML = "<div class=\"warmup-line\">"
+      + "<span class=\"warmup-name\">" + esc(w.warmup.name) + "</span>"
+      + "<span class=\"warmup-meta\">" + esc(w.warmup.scheme) + " · " + esc(w.warmup.rest) + (w.warmup.note ? " — " + esc(w.warmup.note) : "") + "</span>"
+      + "</div>";
+
+    var items = "";
     w.exercises.forEach(function(e){
       var entry = (state.logs[e.id] && state.logs[e.id][selectedWeek]) || null;
       var base = baselineWeek(e.id);
@@ -473,40 +521,47 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         badgeHTML = "<span class=\"delta-badge " + deltaClass(d) + "\" id=\"delta-" + e.id + "\">" + deltaLabel(d) + "</span>";
       }
 
-      var weightCell, repsCell;
+      var fieldsHTML;
       if(e.pyramidSets){
-        var n = e.pyramidSets, wRows = "", rRows = "";
+        var n = e.pyramidSets, setRows = "";
         for(var i=0;i<n;i++){
           var s = (entry && entry.sets && entry.sets[i]) ? entry.sets[i] : null;
           var wv = (s && s.weight != null) ? s.weight : "";
           var rv = (s && s.reps != null) ? s.reps : "";
-          wRows += "<div class=\"pyr-row\"><span class=\"pyr-label\">S" + (i+1) + "</span><input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight input-sm\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" data-set=\"" + i + "\" value=\"" + wv + "\"></div>";
-          rRows += "<div class=\"pyr-row\"><input type=\"number\" step=\"1\" min=\"0\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + e.id + "\" data-field=\"reps\" data-set=\"" + i + "\" value=\"" + rv + "\"></div>";
+          setRows += "<div class=\"pyr-row\">"
+            + "<span class=\"pyr-label\">Set " + (i+1) + "</span>"
+            + "<input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight input-sm\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" data-set=\"" + i + "\" value=\"" + wv + "\">"
+            + "<input type=\"number\" step=\"1\" min=\"0\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + e.id + "\" data-field=\"reps\" data-set=\"" + i + "\" value=\"" + rv + "\">"
+            + "</div>";
         }
-        weightCell = "<div class=\"pyr-stack\">" + wRows + "</div>";
-        repsCell = "<div class=\"pyr-stack\">" + rRows + "</div>";
+        fieldsHTML = "<div class=\"acc-fields pyr-stack\">" + setRows + "</div>";
       } else {
         var weightVal = (entry && entry.sets && entry.sets.length && entry.sets[0].weight != null) ? entry.sets[0].weight : "";
         var repsVal = (entry && entry.sets && entry.sets.length) ? entry.sets.map(function(s){ return s.reps; }).join(",") : "";
-        weightCell = "<input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" value=\"" + weightVal + "\">";
-        repsCell = "<input type=\"text\" class=\"input-reps\" placeholder=\"e.g. 8,10,12\" data-ex=\"" + e.id + "\" data-field=\"reps\" value=\"" + esc(repsVal) + "\">";
+        fieldsHTML = "<div class=\"acc-fields\">"
+          + "<div class=\"field-group\"><span class=\"field-label\">Weight</span><input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" value=\"" + weightVal + "\"></div>"
+          + "<div class=\"field-group\"><span class=\"field-label\">Reps per set</span><input type=\"text\" class=\"input-reps\" placeholder=\"e.g. 8,10,12\" data-ex=\"" + e.id + "\" data-field=\"reps\" value=\"" + esc(repsVal) + "\"></div>"
+          + "</div>";
       }
 
-      rows += "<tr>"
-        + "<td class=\"ex-name\">" + esc(e.name) + (e.note ? "<span class=\"ex-note\">" + esc(e.note) + "</span>" : "") + "</td>"
-        + "<td class=\"cell-target\">" + esc(e.target) + "</td>"
-        + "<td class=\"cell-rest\">" + esc(e.rest) + "</td>"
-        + "<td>" + weightCell + "</td>"
-        + "<td>" + repsCell + "</td>"
-        + "<td>" + badgeHTML + "</td>"
-        + "</tr>";
+      items += "<div class=\"acc-item\" data-ex=\"" + e.id + "\">"
+        + "<button class=\"acc-head\" type=\"button\" data-ex=\"" + e.id + "\" aria-expanded=\"false\">"
+        + "<span class=\"acc-chevron\">›</span>"
+        + "<span class=\"acc-head-main\"><span class=\"acc-name\">" + esc(e.name) + "</span>"
+        + "<span class=\"acc-meta\">" + esc(e.target) + " · " + esc(e.rest) + "</span></span>"
+        + "<span class=\"acc-head-side\"><span class=\"acc-summary\" id=\"summary-" + e.id + "\">" + esc(summarizeEntry(e.id, selectedWeek)) + "</span>" + badgeHTML + "</span>"
+        + "</button>"
+        + "<div class=\"acc-body-wrap\"><div class=\"acc-body\"><div class=\"acc-body-inner\">"
+        + (e.note ? "<p class=\"acc-note\">" + esc(e.note) + "</p>" : "")
+        + fieldsHTML
+        + "</div></div></div>"
+        + "</div>";
     });
 
     return "<section class=\"day-card\" data-day=\"" + w.id + "\">"
       + "<div class=\"day-card__head\"><span class=\"day-card__dot\"></span><h2>" + esc(w.name) + "</h2></div>"
-      + "<div class=\"table-scroll\"><table class=\"log-table\"><thead><tr>"
-      + "<th>Exercise</th><th>Target reps</th><th>Rest</th><th>Weight</th><th>Reps (actual)</th><th>&Delta; vs baseline</th>"
-      + "</tr></thead><tbody>" + rows + "</tbody></table></div>"
+      + warmupHTML
+      + "<div class=\"acc-list\">" + items + "</div>"
       + "</section>";
   }
 
@@ -633,7 +688,31 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       input.addEventListener("input", function(){ onFieldInput(input); });
     });
 
+    document.querySelectorAll(".acc-head").forEach(function(btn){
+      btn.addEventListener("click", function(){ toggleExercise(btn.dataset.ex); });
+    });
+    applyExpandedState();
+
     setSaveStatus("idle");
+  }
+
+  function toggleExercise(exId){
+    expandedExercise = (expandedExercise === exId) ? null : exId;
+    applyExpandedState();
+  }
+
+  function applyExpandedState(){
+    document.querySelectorAll(".acc-item").forEach(function(item){
+      var expanded = (item.dataset.ex === expandedExercise);
+      item.classList.toggle("expanded", expanded);
+      var btn = item.querySelector(".acc-head");
+      if(btn) btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      var body = item.querySelector(".acc-body");
+      if(body){
+        if(expanded) body.removeAttribute("inert");
+        else body.setAttribute("inert", "");
+      }
+    });
   }
 
   document.addEventListener("click", function(ev){
@@ -647,7 +726,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
   function onFieldInput(input){
     var exId = input.dataset.ex;
     var def = EX_INDEX[exId];
-    var row = input.closest("tr");
+    var row = input.closest(".acc-item");
     var sets = [];
 
     if(def.pyramidSets){
@@ -687,6 +766,8 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         badge.textContent = deltaLabel(d);
       }
     }
+    var summaryEl = document.getElementById("summary-" + exId);
+    if(summaryEl) summaryEl.textContent = summarizeEntry(exId, selectedWeek);
 
     renderProgress();
     scheduleSave();
@@ -939,6 +1020,10 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 
     if("serviceWorker" in navigator){
       navigator.serviceWorker.register("sw.js").catch(function(){});
+    }
+
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock("portrait").catch(function(){});
     }
   }
 
