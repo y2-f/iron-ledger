@@ -197,7 +197,7 @@ button:hover{ border-color:var(--text-muted); }
 .field-group{ display:flex; flex-direction:column; gap:5px; }
 
 .input-weight{ width:92px; }
-.input-reps{ width:150px; }
+.input-reps{ width:90px; }
 .input-weight, .input-reps{ padding:10px 12px; font-size:15px; }
 .input-unit{ font-size:11px; color:var(--text-muted); margin-left:4px; }
 
@@ -207,6 +207,22 @@ button:hover{ border-color:var(--text-muted); }
 .input-sm{ padding:8px 10px; font-size:14px; }
 .pyr-row .input-weight.input-sm{ width:78px; }
 .pyr-row .input-reps.input-sm{ width:72px; }
+
+.reps-group{ flex:1 1 100%; }
+.reps-rows{ display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+.reps-row{ display:flex; align-items:center; gap:8px; }
+.reps-row .input-reps{ width:90px; }
+.reps-remove{
+  flex:none; width:30px; height:30px; border-radius:50%; padding:0;
+  border:1px solid var(--border); background:var(--surface-2); color:var(--text-muted);
+  font-size:16px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.reps-remove:hover{ color:var(--delta-bad); border-color:var(--delta-bad); }
+.btn-add-set{
+  font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px;
+  background:var(--surface-2); border:1px solid var(--border); color:var(--text-secondary); cursor:pointer;
+}
+.btn-add-set:hover{ color:var(--text-primary); border-color:var(--text-muted); }
 
 .delta-badge{
   display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px;
@@ -382,11 +398,6 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
 
-  function parseReps(str){
-    if(!str) return [];
-    return str.split(/[,\s]+/).map(function(s){ return parseFloat(s); })
-      .filter(function(n){ return isFinite(n) && n >= 0; });
-  }
   function sum(arr){ return arr.reduce(function(a,b){ return a+b; }, 0); }
 
   function hasLog(exId, week){
@@ -494,6 +505,13 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 
   /* ---------------- rendering: shell ---------------- */
 
+  function repsRowHTML(exId, value){
+    return "<div class=\"reps-row\">"
+      + "<input type=\"text\" inputmode=\"numeric\" pattern=\"[0-9]*\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + exId + "\" data-field=\"reps\" value=\"" + (value != null ? value : "") + "\">"
+      + "<button type=\"button\" class=\"reps-remove\" aria-label=\"Remove set\">&times;</button>"
+      + "</div>";
+  }
+
   function summarizeEntry(exId, week){
     var entry = state.logs[exId] && state.logs[exId][week];
     if(!entry || !entry.sets || !entry.sets.length) return "";
@@ -530,17 +548,25 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
           var rv = (s && s.reps != null) ? s.reps : "";
           setRows += "<div class=\"pyr-row\">"
             + "<span class=\"pyr-label\">Set " + (i+1) + "</span>"
-            + "<input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight input-sm\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" data-set=\"" + i + "\" value=\"" + wv + "\">"
-            + "<input type=\"number\" step=\"1\" min=\"0\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + e.id + "\" data-field=\"reps\" data-set=\"" + i + "\" value=\"" + rv + "\">"
+            + "<input type=\"number\" inputmode=\"decimal\" step=\"0.5\" min=\"0\" class=\"input-weight input-sm\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" data-set=\"" + i + "\" value=\"" + wv + "\">"
+            + "<input type=\"text\" inputmode=\"numeric\" pattern=\"[0-9]*\" class=\"input-reps input-sm\" placeholder=\"reps\" data-ex=\"" + e.id + "\" data-field=\"reps\" data-set=\"" + i + "\" value=\"" + rv + "\">"
             + "</div>";
         }
         fieldsHTML = "<div class=\"acc-fields pyr-stack\">" + setRows + "</div>";
       } else {
-        var weightVal = (entry && entry.sets && entry.sets.length && entry.sets[0].weight != null) ? entry.sets[0].weight : "";
-        var repsVal = (entry && entry.sets && entry.sets.length) ? entry.sets.map(function(s){ return s.reps; }).join(",") : "";
+        var setsArr = (entry && entry.sets) ? entry.sets : [];
+        var rowCount = setsArr.length || 3;
+        var rowsHTML = "";
+        for(var j=0;j<rowCount;j++){
+          rowsHTML += repsRowHTML(e.id, setsArr[j] ? setsArr[j].reps : "");
+        }
+        var weightVal = (setsArr.length && setsArr[0].weight != null) ? setsArr[0].weight : "";
         fieldsHTML = "<div class=\"acc-fields\">"
-          + "<div class=\"field-group\"><span class=\"field-label\">Weight</span><input type=\"number\" step=\"0.5\" min=\"0\" class=\"input-weight\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" value=\"" + weightVal + "\"></div>"
-          + "<div class=\"field-group\"><span class=\"field-label\">Reps per set</span><input type=\"text\" class=\"input-reps\" placeholder=\"e.g. 8,10,12\" data-ex=\"" + e.id + "\" data-field=\"reps\" value=\"" + esc(repsVal) + "\"></div>"
+          + "<div class=\"field-group\"><span class=\"field-label\">Weight</span><input type=\"number\" inputmode=\"decimal\" step=\"0.5\" min=\"0\" class=\"input-weight\" placeholder=\"kg\" data-ex=\"" + e.id + "\" data-field=\"weight\" value=\"" + weightVal + "\"></div>"
+          + "<div class=\"field-group reps-group\"><span class=\"field-label\">Reps per set</span>"
+          + "<div class=\"reps-rows\" data-ex=\"" + e.id + "\">" + rowsHTML + "</div>"
+          + "<button type=\"button\" class=\"btn-add-set\" data-ex=\"" + e.id + "\">+ Add set</button>"
+          + "</div>"
           + "</div>";
       }
 
@@ -693,12 +719,50 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     });
     applyExpandedState();
 
+    document.querySelectorAll(".btn-add-set").forEach(function(btn){
+      btn.addEventListener("click", function(){ addSetRow(btn.dataset.ex); });
+    });
+    document.querySelectorAll(".reps-remove").forEach(function(btn){
+      wireRemoveButton(btn);
+    });
+
     setSaveStatus("idle");
   }
 
   function toggleExercise(exId){
     expandedExercise = (expandedExercise === exId) ? null : exId;
     applyExpandedState();
+  }
+
+  function wireRemoveButton(btn){
+    btn.addEventListener("click", function(){ removeSetRow(btn); });
+  }
+
+  function addSetRow(exId){
+    var container = document.querySelector(".reps-rows[data-ex=\"" + exId + "\"]");
+    if(!container) return;
+    var div = document.createElement("div");
+    div.innerHTML = repsRowHTML(exId, "");
+    var row = div.firstChild;
+    container.appendChild(row);
+    var input = row.querySelector("input");
+    input.addEventListener("input", function(){ onFieldInput(input); });
+    wireRemoveButton(row.querySelector(".reps-remove"));
+    input.focus();
+  }
+
+  function removeSetRow(btn){
+    var row = btn.closest(".reps-row");
+    var container = row.parentElement;
+    if(container.querySelectorAll(".reps-row").length <= 1){
+      var input = row.querySelector("input");
+      input.value = "";
+      onFieldInput(input);
+      return;
+    }
+    row.remove();
+    var remaining = container.querySelector("input[data-field=\"reps\"]");
+    if(remaining) onFieldInput(remaining);
   }
 
   function applyExpandedState(){
@@ -741,9 +805,13 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       }
     } else {
       var weightInput = row.querySelector("input[data-field=\"weight\"]");
-      var repsInput = row.querySelector("input[data-field=\"reps\"]");
       var weight = weightInput.value === "" ? null : parseFloat(weightInput.value);
-      var reps = parseReps(repsInput.value);
+      var repsInputs = row.querySelectorAll(".reps-rows input[data-field=\"reps\"]");
+      var reps = [];
+      repsInputs.forEach(function(ri){
+        var r = ri.value === "" ? null : parseInt(ri.value, 10);
+        if(r != null && isFinite(r) && r >= 0) reps.push(r);
+      });
       sets = reps.map(function(r){ return { weight: (weight != null && isFinite(weight)) ? weight : null, reps: r }; });
     }
 
