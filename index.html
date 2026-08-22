@@ -1081,8 +1081,45 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 
   /* ---------------- boot ---------------- */
 
+  function b64urlToStr(b64url){
+    var b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+    while(b64.length % 4) b64 += "=";
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  function importIntoState(imported){
+    if(!imported || !imported.weeks) return;
+    imported.weeks.forEach(function(wk){
+      if(state.weeks.indexOf(wk) === -1) state.weeks.push(wk);
+    });
+    state.weeks.sort();
+    Object.keys(imported.logs || {}).forEach(function(exId){
+      if(!state.logs[exId]) state.logs[exId] = {};
+      Object.keys(imported.logs[exId]).forEach(function(wk){
+        if(!state.logs[exId][wk]){
+          state.logs[exId][wk] = imported.logs[exId][wk];
+        }
+      });
+    });
+  }
+
+  function tryImportFromHash(){
+    var h = location.hash;
+    if(h.indexOf("#import=") !== 0) return;
+    try {
+      var json = b64urlToStr(h.slice(8));
+      importIntoState(JSON.parse(json));
+      saveState();
+    } catch(e){}
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
   function boot(){
     state = loadState();
+    tryImportFromHash();
     ensureSelectedWeek();
     renderShell();
 
