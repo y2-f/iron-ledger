@@ -175,13 +175,26 @@ button:hover{ border-color:var(--text-muted); }
 .day-card[data-day="lower"]{ --cat:var(--cat-5); }
 
 .day-card__head{
-  display:flex; align-items:center; gap:10px; padding:16px 18px 12px;
+  display:flex; align-items:center; gap:10px; width:100%; box-sizing:border-box;
+  padding:16px 18px; background:none; border:none; margin:0;
+  font:inherit; color:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent;
 }
+.day-card__head:hover{ background:var(--surface-2); }
 .day-card__dot{ width:10px; height:10px; border-radius:50%; background:var(--cat); flex:none; }
 .day-card__head h2{
   font-family:var(--font-display); font-weight:600; text-transform:uppercase;
   letter-spacing:0.03em; font-size:19px; margin:0; color:var(--text-primary);
 }
+.day-card__count{
+  font-size:11.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;
+  flex:1 1 auto; text-align:right; margin-right:2px;
+}
+.day-card__chevron{ flex:none; }
+.day-card.expanded .day-card__chevron{ transform:rotate(180deg); color:var(--text-secondary); }
+.day-body-wrap{ display:grid; grid-template-rows:0fr; transition:grid-template-rows .2s ease; }
+.day-card.expanded .day-body-wrap{ grid-template-rows:1fr; }
+.day-body{ overflow:hidden; min-height:0; }
+.day-body-inner{ min-height:0; }
 
 .warmup-line{
   display:flex; flex-direction:column; gap:2px; padding:12px 18px;
@@ -421,6 +434,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
   var selectedWeek = null;
   var chartDay = "overall";
   var expandedExercise = null;
+  var expandedDays = {};
 
   function css(name){
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -613,9 +627,16 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     });
 
     return "<section class=\"day-card\" data-day=\"" + w.id + "\">"
-      + "<div class=\"day-card__head\"><span class=\"day-card__dot\"></span><h2>" + esc(w.name) + "</h2></div>"
+      + "<button class=\"day-card__head\" type=\"button\" data-dayid=\"" + w.id + "\" aria-expanded=\"false\">"
+      + "<span class=\"day-card__dot\"></span>"
+      + "<h2>" + esc(w.name) + "</h2>"
+      + "<span class=\"day-card__count\">" + w.exercises.length + " exercises</span>"
+      + "<span class=\"acc-chevron day-card__chevron\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></span>"
+      + "</button>"
+      + "<div class=\"day-body-wrap\"><div class=\"day-body\"><div class=\"day-body-inner\">"
       + warmupHTML
       + "<div class=\"acc-list\">" + items + "</div>"
+      + "</div></div></div>"
       + "</section>";
   }
 
@@ -836,6 +857,11 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     });
     applyExpandedState();
 
+    document.querySelectorAll(".day-card__head").forEach(function(btn){
+      btn.addEventListener("click", function(){ toggleDay(btn.dataset.dayid); });
+    });
+    applyDayExpandedState();
+
     document.querySelectorAll(".btn-add-set").forEach(function(btn){
       btn.addEventListener("click", function(){ addSetRow(btn.dataset.ex); });
     });
@@ -889,6 +915,25 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       var btn = item.querySelector(".acc-head");
       if(btn) btn.setAttribute("aria-expanded", expanded ? "true" : "false");
       var body = item.querySelector(".acc-body");
+      if(body){
+        if(expanded) body.removeAttribute("inert");
+        else body.setAttribute("inert", "");
+      }
+    });
+  }
+
+  function toggleDay(dayId){
+    expandedDays[dayId] = !expandedDays[dayId];
+    applyDayExpandedState();
+  }
+
+  function applyDayExpandedState(){
+    document.querySelectorAll(".day-card").forEach(function(card){
+      var expanded = !!expandedDays[card.dataset.day];
+      card.classList.toggle("expanded", expanded);
+      var btn = card.querySelector(".day-card__head");
+      if(btn) btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      var body = card.querySelector(".day-body");
       if(body){
         if(expanded) body.removeAttribute("inert");
         else body.setAttribute("inert", "");
