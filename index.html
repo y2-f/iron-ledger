@@ -125,6 +125,30 @@ button:hover{ border-color:var(--text-muted); }
 .add-week-pop[hidden]{ display:none; }
 .add-week-pop .row{ display:flex; gap:8px; }
 
+.backup-modal{
+  position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.55); padding:20px;
+}
+.backup-modal[hidden]{ display:none; }
+.backup-box{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; max-width:420px; width:100%; box-shadow:var(--shadow);
+}
+.backup-box h3{
+  font-family:var(--font-display); font-weight:600; text-transform:uppercase;
+  letter-spacing:0.03em; font-size:16px; margin:0 0 10px;
+}
+.backup-box p{ font-size:12.5px; color:var(--text-secondary); line-height:1.5; margin:0 0 12px; }
+.backup-box textarea{
+  width:100%; font-family:var(--font-body); font-size:12px; color:var(--text-primary);
+  background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+  padding:10px; resize:none; margin-bottom:12px; word-break:break-all;
+}
+.backup-box .row{ display:flex; gap:8px; }
+.import-status{ font-weight:600; }
+.import-status.ok{ color:var(--delta-good); }
+.import-status.err{ color:var(--delta-bad); }
+
 .save-status{ font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
 .save-status .dot{ width:6px; height:6px; border-radius:50%; background:var(--text-muted); }
 .save-status.state-saving .dot{ background:var(--accent); }
@@ -636,10 +660,31 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       + "</div></div>";
 
     if(state.weeks.length){
+      header += "<button class=\"btn-ghost\" id=\"btn-backup\" type=\"button\" title=\"Get a copyable backup of all logged data\">Backup data</button>";
       header += "<button class=\"btn-ghost btn-danger\" id=\"btn-delete-week\" type=\"button\" title=\"Delete the selected week's entries\">Delete week</button>";
     }
+    header += "<button class=\"btn-ghost\" id=\"btn-import\" type=\"button\" title=\"Paste in a backup to restore data\">Import backup</button>";
     header += "<div class=\"save-status\" id=\"save-status\"><span class=\"dot\"></span><span class=\"txt\"></span></div>";
     header += "</div></header>";
+
+    header += "<div class=\"backup-modal\" id=\"backup-modal\" hidden>"
+      + "<div class=\"backup-box\">"
+      + "<h3>Backup</h3>"
+      + "<p>Copy this somewhere safe (Notes, Messages to yourself). To restore it later — especially after removing and re-adding the home-screen icon — open the app and use “Import backup”, pasting this text back in.</p>"
+      + "<textarea id=\"backup-text\" readonly rows=\"5\"></textarea>"
+      + "<div class=\"row\"><button class=\"btn-primary\" id=\"backup-copy\" type=\"button\" style=\"flex:1;\">Copy</button>"
+      + "<button class=\"btn-ghost\" id=\"backup-close\" type=\"button\">Close</button></div>"
+      + "</div></div>";
+
+    header += "<div class=\"backup-modal\" id=\"import-modal\" hidden>"
+      + "<div class=\"backup-box\">"
+      + "<h3>Import backup</h3>"
+      + "<p>Paste a backup you copied earlier. This merges those weeks in — it won't overwrite anything already logged here.</p>"
+      + "<textarea id=\"import-text\" rows=\"5\" placeholder=\"Paste backup text here\"></textarea>"
+      + "<p id=\"import-status\" class=\"import-status\"></p>"
+      + "<div class=\"row\"><button class=\"btn-primary\" id=\"import-confirm\" type=\"button\" style=\"flex:1;\">Import</button>"
+      + "<button class=\"btn-ghost\" id=\"import-close\" type=\"button\">Close</button></div>"
+      + "</div></div>";
 
     var body;
     if(!state.weeks.length){
@@ -711,6 +756,74 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         selectedWeek = null;
         renderShell();
         scheduleSave();
+      });
+    }
+
+    var backupBtn = document.getElementById("btn-backup");
+    var backupModal = document.getElementById("backup-modal");
+    if(backupBtn){
+      backupBtn.addEventListener("click", function(){
+        var ta = document.getElementById("backup-text");
+        ta.value = backupLink();
+        backupModal.hidden = false;
+        ta.focus();
+        ta.select();
+      });
+      document.getElementById("backup-close").addEventListener("click", function(){
+        backupModal.hidden = true;
+      });
+      document.getElementById("backup-copy").addEventListener("click", function(){
+        var ta = document.getElementById("backup-text");
+        var copyBtn = document.getElementById("backup-copy");
+        ta.focus();
+        ta.select();
+        var done = function(){ copyBtn.textContent = "Copied"; setTimeout(function(){ copyBtn.textContent = "Copy"; }, 1500); };
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(ta.value).then(done, function(){ document.execCommand("copy"); done(); });
+        } else {
+          document.execCommand("copy");
+          done();
+        }
+      });
+    }
+
+    var importBtn = document.getElementById("btn-import");
+    var importModal = document.getElementById("import-modal");
+    if(importBtn){
+      importBtn.addEventListener("click", function(){
+        importModal.hidden = false;
+        var ta = document.getElementById("import-text");
+        ta.value = "";
+        document.getElementById("import-status").textContent = "";
+        document.getElementById("import-status").className = "import-status";
+        ta.focus();
+      });
+      document.getElementById("import-close").addEventListener("click", function(){
+        importModal.hidden = true;
+      });
+      document.getElementById("import-confirm").addEventListener("click", function(){
+        var raw = document.getElementById("import-text").value.trim();
+        var statusEl = document.getElementById("import-status");
+        var marker = "#import=";
+        var idx = raw.indexOf(marker);
+        var payload = idx === -1 ? raw : raw.slice(idx + marker.length);
+        payload = payload.trim();
+        if(!payload){
+          statusEl.textContent = "Paste a backup first.";
+          statusEl.className = "import-status err";
+          return;
+        }
+        try {
+          var json = b64urlToStr(payload);
+          var imported = JSON.parse(json);
+          if(!imported || !imported.weeks) throw new Error("bad shape");
+          importIntoState(imported);
+          saveState();
+          renderShell();
+        } catch(e){
+          statusEl.textContent = "That doesn't look like a valid backup.";
+          statusEl.className = "import-status err";
+        }
       });
     }
 
@@ -1092,6 +1205,17 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     var bytes = new Uint8Array(bin.length);
     for(var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
     return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  function strToB64url(str){
+    var bytes = new TextEncoder().encode(str);
+    var bin = "";
+    for(var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  function backupLink(){
+    return location.origin + location.pathname + "#import=" + strToB64url(JSON.stringify(state));
   }
 
   function importIntoState(imported){
