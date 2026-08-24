@@ -279,6 +279,20 @@ button:hover{ border-color:var(--text-muted); }
 }
 .section-sub{ color:var(--text-secondary); font-size:13.5px; margin:0 0 18px; }
 
+.goal-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px 18px; box-shadow:var(--shadow); margin-bottom:16px;
+}
+.goal-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
+.goal-label{
+  font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); font-weight:600;
+}
+.goal-pct{ font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--text-primary); }
+.goal-bar{ height:10px; background:var(--surface-2); border:1px solid var(--border); overflow:hidden; }
+.goal-bar-fill{ height:100%; background:var(--accent); transition:width .25s ease; }
+.goal-bar-fill.complete{ background:var(--delta-good); }
+.goal-sub{ margin-top:8px; font-size:12.5px; color:var(--text-secondary); }
+
 .stat-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
 .stat-tile{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
@@ -1041,6 +1055,8 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     for(var i = overall.length - 1; i >= 0; i--){ if(overall[i] != null){ lastOverall = overall[i]; break; } }
     var trackedCount = ALL_EX_IDS.filter(function(id){ return baselineWeek(id); }).length;
 
+    var goal = goalCardHTML();
+
     var stats = "<div class=\"stat-row\">"
       + statTile("Weeks logged", state.weeks.length, "")
       + statTile("Lifts tracked", trackedCount, "")
@@ -1059,7 +1075,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       chartHTML = "<div class=\"chart-card\" id=\"chart-card\"></div>";
     }
 
-    region.innerHTML = stats + chips + chartHTML
+    region.innerHTML = goal + stats + chips + chartHTML
       + "<div class=\"table-toggle\"><button class=\"btn-ghost\" id=\"toggle-table\" type=\"button\">View as table</button></div>"
       + "<div class=\"raw-table\" id=\"raw-table\"></div>";
 
@@ -1073,6 +1089,23 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     });
 
     if(state.weeks.length >= 2) drawChart();
+  }
+
+  var PROGRAM_GOAL_WEEKS = 12;
+
+  function goalCardHTML(){
+    var n = state.weeks.length;
+    var capped = Math.min(n, PROGRAM_GOAL_WEEKS);
+    var pct = Math.round((capped / PROGRAM_GOAL_WEEKS) * 100);
+    var complete = n >= PROGRAM_GOAL_WEEKS;
+    var sub = complete
+      ? "Program complete — " + n + " week" + (n === 1 ? "" : "s") + " logged"
+      : (PROGRAM_GOAL_WEEKS - n) + " week" + (PROGRAM_GOAL_WEEKS - n === 1 ? "" : "s") + " to go";
+    return "<div class=\"goal-card\">"
+      + "<div class=\"goal-head\"><span class=\"goal-label\">12-Week Program</span><span class=\"goal-pct\">Week " + capped + " of " + PROGRAM_GOAL_WEEKS + "</span></div>"
+      + "<div class=\"goal-bar\"><div class=\"goal-bar-fill" + (complete ? " complete" : "") + "\" style=\"width:" + pct + "%\"></div></div>"
+      + "<div class=\"goal-sub\">" + esc(sub) + "</div>"
+      + "</div>";
   }
 
   function statTile(label, value, unit, delta){
