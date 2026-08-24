@@ -104,6 +104,11 @@ select, input[type="date"], input[type="number"], input[type="text"]{
   padding:8px 10px; line-height:1.2;
 }
 select{ min-width:150px; }
+.week-nav{ display:flex; align-items:center; gap:6px; }
+.week-nav select{ min-width:0; }
+.week-step{ padding:8px 10px; font-size:13px; line-height:1; }
+.week-step:disabled{ opacity:0.3; cursor:default; }
+.week-step:disabled:hover{ border-color:var(--border); }
 button{
   font-family:var(--font-body); font-size:12.5px; font-weight:600; cursor:pointer;
   text-transform:uppercase; letter-spacing:0.05em;
@@ -684,7 +689,11 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       + "<div class=\"week-controls\">";
 
     if(state.weeks.length){
-      header += "<div><span class=\"field-label\">Viewing</span><select id=\"week-select\">" + weekOptionsHTML() + "</select></div>";
+      header += "<div><span class=\"field-label\">Viewing</span><div class=\"week-nav\">"
+        + "<button class=\"btn-ghost week-step\" id=\"week-prev\" type=\"button\" aria-label=\"Previous week\">◀</button>"
+        + "<select id=\"week-select\">" + weekOptionsHTML() + "</select>"
+        + "<button class=\"btn-ghost week-step\" id=\"week-next\" type=\"button\" aria-label=\"Next week\">▶</button>"
+        + "</div></div>";
     }
     header += "<div style=\"position:relative;\">"
       + "<button class=\"btn-primary\" id=\"btn-add-week\" type=\"button\">+ Log new week</button>"
@@ -759,6 +768,22 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       sel.addEventListener("change", function(){
         selectedWeek = sel.value;
         renderShell();
+      });
+    }
+
+    var prevBtn = document.getElementById("week-prev");
+    var nextBtn = document.getElementById("week-next");
+    if(prevBtn && nextBtn){
+      var wkIdx = state.weeks.indexOf(selectedWeek);
+      prevBtn.disabled = wkIdx <= 0;
+      nextBtn.disabled = wkIdx === -1 || wkIdx >= state.weeks.length - 1;
+      prevBtn.addEventListener("click", function(){
+        var i = state.weeks.indexOf(selectedWeek);
+        if(i > 0){ selectedWeek = state.weeks[i - 1]; renderShell(); }
+      });
+      nextBtn.addEventListener("click", function(){
+        var i = state.weeks.indexOf(selectedWeek);
+        if(i !== -1 && i < state.weeks.length - 1){ selectedWeek = state.weeks[i + 1]; renderShell(); }
       });
     }
 
