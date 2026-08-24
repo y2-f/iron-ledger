@@ -121,14 +121,6 @@ button:hover{ border-color:var(--text-muted); }
 .btn-ghost{ background:transparent; }
 .btn-danger{ color:var(--delta-bad); }
 
-.add-week-pop{
-  position:absolute; top:calc(100% + 8px); right:0; z-index:20;
-  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-  box-shadow:var(--shadow); padding:14px; display:flex; flex-direction:column; gap:10px;
-  min-width:200px;
-}
-.add-week-pop[hidden]{ display:none; }
-.add-week-pop .row{ display:flex; gap:8px; }
 
 .backup-modal{
   position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center;
@@ -695,13 +687,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         + "<button class=\"btn-ghost week-step\" id=\"week-next\" type=\"button\" aria-label=\"Next week\">▶</button>"
         + "</div></div>";
     }
-    header += "<div style=\"position:relative;\">"
-      + "<button class=\"btn-primary\" id=\"btn-add-week\" type=\"button\">+ Log new week</button>"
-      + "<div class=\"add-week-pop\" id=\"add-week-pop\" hidden>"
-      + "<div><span class=\"field-label\">Week date</span><input type=\"date\" id=\"new-week-date\" value=\"" + suggestNextDate() + "\"></div>"
-      + "<div class=\"row\"><button class=\"btn-primary\" id=\"confirm-add-week\" type=\"button\" style=\"flex:1;\">Start week</button>"
-      + "<button class=\"btn-ghost\" id=\"cancel-add-week\" type=\"button\">Cancel</button></div>"
-      + "</div></div>";
+    header += "<button class=\"btn-primary\" id=\"btn-add-week\" type=\"button\">+ Log new week</button>";
 
     if(state.weeks.length){
       header += "<button class=\"btn-ghost\" id=\"btn-backup\" type=\"button\" title=\"Get a copyable backup of all logged data\">Backup data</button>";
@@ -710,6 +696,14 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     header += "<button class=\"btn-ghost\" id=\"btn-import\" type=\"button\" title=\"Paste in a backup to restore data\">Import backup</button>";
     header += "<div class=\"save-status\" id=\"save-status\"><span class=\"dot\"></span><span class=\"txt\"></span></div>";
     header += "</div></header>";
+
+    header += "<div class=\"backup-modal\" id=\"add-week-modal\" hidden>"
+      + "<div class=\"backup-box\">"
+      + "<h3>Log new week</h3>"
+      + "<div><span class=\"field-label\">Week date</span><input type=\"date\" id=\"new-week-date\" value=\"" + suggestNextDate() + "\"></div>"
+      + "<div class=\"row\" style=\"margin-top:12px;\"><button class=\"btn-primary\" id=\"confirm-add-week\" type=\"button\" style=\"flex:1;\">Start week</button>"
+      + "<button class=\"btn-ghost\" id=\"cancel-add-week\" type=\"button\">Cancel</button></div>"
+      + "</div></div>";
 
     header += "<div class=\"backup-modal\" id=\"backup-modal\" hidden>"
       + "<div class=\"backup-box\">"
@@ -788,9 +782,9 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     }
 
     var addBtn = document.getElementById("btn-add-week");
-    var pop = document.getElementById("add-week-pop");
-    addBtn.addEventListener("click", function(){ pop.hidden = !pop.hidden; });
-    document.getElementById("cancel-add-week").addEventListener("click", function(){ pop.hidden = true; });
+    var addWeekModal = document.getElementById("add-week-modal");
+    addBtn.addEventListener("click", function(){ addWeekModal.hidden = false; });
+    document.getElementById("cancel-add-week").addEventListener("click", function(){ addWeekModal.hidden = true; });
     document.getElementById("confirm-add-week").addEventListener("click", function(){
       var dateInput = document.getElementById("new-week-date");
       var val = dateInput.value || todayISO;
@@ -812,7 +806,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         }
       }
       selectedWeek = val;
-      pop.hidden = true;
+      addWeekModal.hidden = true;
       renderShell();
       scheduleSave();
     });
@@ -992,14 +986,6 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       }
     });
   }
-
-  document.addEventListener("click", function(ev){
-    var pop = document.getElementById("add-week-pop");
-    var addBtn = document.getElementById("btn-add-week");
-    if(pop && !pop.hidden && !pop.contains(ev.target) && ev.target !== addBtn){
-      pop.hidden = true;
-    }
-  });
 
   function onFieldInput(input){
     var exId = input.dataset.ex;
