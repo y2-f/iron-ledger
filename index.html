@@ -772,6 +772,19 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       if(state.weeks.indexOf(val) === -1){
         state.weeks.push(val);
         state.weeks.sort();
+        var newIdx = state.weeks.indexOf(val);
+        if(newIdx > 0){
+          var prevWeek = state.weeks[newIdx - 1];
+          ALL_EX_IDS.forEach(function(exId){
+            var prevEntry = state.logs[exId] && state.logs[exId][prevWeek];
+            if(prevEntry && prevEntry.sets && prevEntry.sets.length){
+              if(!state.logs[exId]) state.logs[exId] = {};
+              state.logs[exId][val] = { sets: prevEntry.sets.map(function(s){
+                return { weight: s.weight, reps: s.reps };
+              }) };
+            }
+          });
+        }
       }
       selectedWeek = val;
       pop.hidden = true;
