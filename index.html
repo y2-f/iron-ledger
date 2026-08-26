@@ -479,34 +479,12 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
 
   var CAT_VAR = { push:"--cat-1", pull:"--cat-2", legs:"--cat-3", upper:"--cat-4", lower:"--cat-5" };
 
-  // Verified exrx.net pages, keyed by exercise display name. Falls back to a
-  // scoped Google search when a name isn't in this map, rather than ever
-  // guessing an exrx.net URL directly.
-  var FORM_REF_BY_NAME = {
-    "Flat Bench Press": "https://exrx.net/WeightExercises/PectoralSternal/BBBenchPress",
-    "Incline DB Press": "https://exrx.net/WeightExercises/PectoralClavicular/DBInclineBenchPress",
-    "Pec Deck": "https://exrx.net/WeightExercises/PectoralSternal/LVPecDeckFly",
-    "Tricep Pushdown": "https://exrx.net/WeightExercises/Triceps/CBPushdown",
-    "Lateral Raises": "https://exrx.net/WeightExercises/DeltoidLateral/DBLateralRaise",
-    "Wide Lat Pulldown": "https://exrx.net/WeightExercises/LatissimusDorsi/CBFrontPulldown",
-    "Incline DB Row": "https://exrx.net/WeightExercises/BackGeneral/DBInclineRow",
-    "Spider Curl": "https://exrx.net/WeightExercises/Brachialis/BBProneInclineCurl",
-    "Hammer Curl": "https://exrx.net/WeightExercises/Brachioradialis/DBHammerCurl",
-    "Barbell Squats": "https://exrx.net/WeightExercises/Quadriceps/BBSquat",
-    "Bulgarian Split Squat": "https://exrx.net/WeightExercises/Quadriceps/DBSingleLegSplitSquat",
-    "Lying Ham Curl": "https://exrx.net/WeightExercises/Hamstrings/LVLyingLegCurl",
-    "Leg Extension": "https://exrx.net/WeightExercises/Quadriceps/LVLegExtension",
-    "Calf Raises": "https://exrx.net/WeightExercises/Gastrocnemius/LVStandingCalfRaise",
-    "Machine Press": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress",
-    "Cable OH Tricep": "https://exrx.net/WeightExercises/Triceps/CBTriExt",
-    "Hanging Leg Raises": "https://exrx.net/WeightExercises/HipFlexors/BWHangingLegRaise",
-    "Ab Crunches": "https://exrx.net/WeightExercises/RectusAbdominis/BWCrunch"
-    // Facepulls and Unilateral DB Row have no single dedicated exrx.net page
-    // under those exact names — left out on purpose so they fall back to a
-    // scoped Google search below rather than linking to a mismatched page.
-  };
+  // ExRx.net's exercise pages turned out to require a login, so instead of
+  // linking to a guessed/gated page, this points at a YouTube search for the
+  // exercise — real demonstration videos, no account needed to watch, and a
+  // search query is always a valid URL rather than a guess at a specific one.
   function formRefUrl(name){
-    return FORM_REF_BY_NAME[name] || ("https://www.google.com/search?q=" + encodeURIComponent("site:exrx.net " + name));
+    return "https://www.youtube.com/results?search_query=" + encodeURIComponent(name + " proper form technique");
   }
 
   var todayISO = (function(){
@@ -848,8 +826,8 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         + "Form reference"
         + "</button>"
         + "<div class=\"form-ref-body\" id=\"form-ref-body-" + e.id + "\" hidden>"
-        + "<a href=\"" + esc(formRefUrl(e.name)) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(e.name) + " on ExRx.net ↗</a>"
-        + "<p class=\"form-ref-note\">Opens in a new tab.</p>"
+        + "<a href=\"" + esc(formRefUrl(e.name)) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(e.name) + " form videos on YouTube ↗</a>"
+        + "<p class=\"form-ref-note\">Opens a search — pick whichever demo looks right. Opens in a new tab.</p>"
         + "</div></div>"
         + "</div></div></div>"
         + "</div>";
