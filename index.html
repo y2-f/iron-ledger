@@ -146,6 +146,26 @@ button:hover{ border-color:var(--text-muted); }
 .import-status.ok{ color:var(--delta-good); }
 .import-status.err{ color:var(--delta-bad); }
 
+.rest-bar{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:12px calc(16px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  box-shadow:0 -4px 16px rgba(0,0,0,0.25);
+}
+.rest-bar[hidden]{ display:none; }
+.rest-bar-inner{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:920px; margin:0 auto; }
+.rest-info{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+.rest-ex{ font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:44vw; }
+.rest-clock{ font-family:var(--font-display); font-size:30px; font-weight:600; line-height:1; font-variant-numeric:tabular-nums; }
+.rest-bar.done .rest-clock{ color:var(--delta-good); }
+.rest-controls{ display:flex; align-items:center; gap:8px; }
+.rest-btn{ padding:9px 12px; font-size:12px; }
+@keyframes rest-pulse{
+  0%, 100% { background:var(--surface); }
+  50% { background:var(--delta-good-wash); }
+}
+.rest-bar.pulse{ animation:rest-pulse 0.6s ease-in-out 3; }
+
 .save-status{ font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
 .save-status .dot{ width:6px; height:6px; border-radius:50%; background:var(--text-muted); }
 .save-status.state-saving .dot{ background:var(--accent); }
@@ -228,6 +248,29 @@ button:hover{ border-color:var(--text-muted); }
 .acc-body{ overflow:hidden; min-height:0; background:var(--surface-2); }
 .acc-body-inner{ padding:14px 18px 18px 42px; display:flex; flex-direction:column; gap:12px; }
 .acc-note{ margin:0; font-size:12.5px; color:var(--text-secondary); font-style:italic; line-height:1.4; }
+
+.rest-start-row{ display:flex; }
+.btn-rest-start{
+  font-size:12.5px; padding:8px 14px; display:inline-flex; align-items:center; gap:6px;
+  background:var(--surface-2);
+}
+.btn-rest-start svg{ flex:none; }
+
+.form-ref{ margin-top:2px; }
+.form-ref-toggle{
+  display:flex; align-items:center; gap:6px; background:none; border:none; padding:0;
+  font-family:var(--font-body); font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em;
+  color:var(--text-muted); cursor:pointer; -webkit-tap-highlight-color:transparent;
+}
+.form-ref-chevron{ width:12px; height:12px; display:inline-flex; flex:none; transition:transform .18s ease; }
+.form-ref.open .form-ref-chevron{ transform:rotate(180deg); }
+.form-ref-body{ margin-top:8px; }
+.form-ref-body[hidden]{ display:none; }
+.form-ref-body a{
+  font-size:12.5px; color:var(--accent); text-decoration:none; border-bottom:1px solid currentColor;
+}
+.form-ref-body a:hover{ opacity:0.85; }
+.form-ref-note{ margin:4px 0 0; font-size:11px; color:var(--text-muted); }
 
 .acc-fields{ display:flex; gap:16px; flex-wrap:wrap; }
 .field-group{ display:flex; flex-direction:column; gap:5px; }
@@ -368,6 +411,7 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
   <p>Iron Ledger is designed for portrait use only.</p>
 </div>
 <div class="wrap" id="app"></div>
+<div class="rest-bar" id="rest-bar" hidden></div>
 <script id="app-script">
 (function(){
   "use strict";
@@ -434,6 +478,36 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
   var ALL_EX_IDS = Object.keys(EX_INDEX);
 
   var CAT_VAR = { push:"--cat-1", pull:"--cat-2", legs:"--cat-3", upper:"--cat-4", lower:"--cat-5" };
+
+  // Verified exrx.net pages, keyed by exercise display name. Falls back to a
+  // scoped Google search when a name isn't in this map, rather than ever
+  // guessing an exrx.net URL directly.
+  var FORM_REF_BY_NAME = {
+    "Flat Bench Press": "https://exrx.net/WeightExercises/PectoralSternal/BBBenchPress",
+    "Incline DB Press": "https://exrx.net/WeightExercises/PectoralClavicular/DBInclineBenchPress",
+    "Pec Deck": "https://exrx.net/WeightExercises/PectoralSternal/LVPecDeckFly",
+    "Tricep Pushdown": "https://exrx.net/WeightExercises/Triceps/CBPushdown",
+    "Lateral Raises": "https://exrx.net/WeightExercises/DeltoidLateral/DBLateralRaise",
+    "Wide Lat Pulldown": "https://exrx.net/WeightExercises/LatissimusDorsi/CBFrontPulldown",
+    "Incline DB Row": "https://exrx.net/WeightExercises/BackGeneral/DBInclineRow",
+    "Spider Curl": "https://exrx.net/WeightExercises/Brachialis/BBProneInclineCurl",
+    "Hammer Curl": "https://exrx.net/WeightExercises/Brachioradialis/DBHammerCurl",
+    "Barbell Squats": "https://exrx.net/WeightExercises/Quadriceps/BBSquat",
+    "Bulgarian Split Squat": "https://exrx.net/WeightExercises/Quadriceps/DBSingleLegSplitSquat",
+    "Lying Ham Curl": "https://exrx.net/WeightExercises/Hamstrings/LVLyingLegCurl",
+    "Leg Extension": "https://exrx.net/WeightExercises/Quadriceps/LVLegExtension",
+    "Calf Raises": "https://exrx.net/WeightExercises/Gastrocnemius/LVStandingCalfRaise",
+    "Machine Press": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress",
+    "Cable OH Tricep": "https://exrx.net/WeightExercises/Triceps/CBTriExt",
+    "Hanging Leg Raises": "https://exrx.net/WeightExercises/HipFlexors/BWHangingLegRaise",
+    "Ab Crunches": "https://exrx.net/WeightExercises/RectusAbdominis/BWCrunch"
+    // Facepulls and Unilateral DB Row have no single dedicated exrx.net page
+    // under those exact names — left out on purpose so they fall back to a
+    // scoped Google search below rather than linking to a mismatched page.
+  };
+  function formRefUrl(name){
+    return FORM_REF_BY_NAME[name] || ("https://www.google.com/search?q=" + encodeURIComponent("site:exrx.net " + name));
+  }
 
   var todayISO = (function(){
     var d = new Date();
@@ -514,6 +588,138 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
       return ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" })[c];
     });
   }
+
+  /* ---------------- rest timer ---------------- */
+
+  var restTimer = null; // { exId, exName, endTime, tickId, autoHideId, state:"running"|"done" }
+  var audioCtx = null;
+
+  function ensureAudioCtx(){
+    if(!audioCtx){
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; }
+    }
+    if(audioCtx && audioCtx.state === "suspended"){
+      try { audioCtx.resume(); } catch(e){}
+    }
+    return audioCtx;
+  }
+
+  function playRestBeep(){
+    var ctx = ensureAudioCtx();
+    if(!ctx) return;
+    var now = ctx.currentTime;
+    [0, 0.3, 0.6].forEach(function(offset){
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.35, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.24);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.26);
+    });
+  }
+
+  function vibrateRestAlert(){
+    if(navigator.vibrate){
+      try { navigator.vibrate([250, 120, 250, 120, 400]); } catch(e){}
+    }
+  }
+
+  function parseRestSeconds(restStr){
+    var m = /([\d.]+)\s*(min|sec)/i.exec(restStr || "");
+    if(!m) return 90;
+    var n = parseFloat(m[1]);
+    return Math.round(m[2].toLowerCase() === "min" ? n * 60 : n);
+  }
+
+  function fmtClock(totalSeconds){
+    var s = Math.max(0, Math.ceil(totalSeconds));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    return m + ":" + String(r).padStart(2, "0");
+  }
+
+  function startRest(exId, exName, seconds){
+    ensureAudioCtx(); // unlock audio playback on this tap, before we need it
+    if(restTimer){
+      if(restTimer.tickId) clearInterval(restTimer.tickId);
+      if(restTimer.autoHideId) clearTimeout(restTimer.autoHideId);
+    }
+    restTimer = { exId: exId, exName: exName, endTime: Date.now() + seconds * 1000, state: "running" };
+    var bar = document.getElementById("rest-bar");
+    bar.hidden = false;
+    bar.classList.remove("pulse", "done");
+    restTimer.tickId = setInterval(tickRest, 250);
+    tickRest();
+  }
+
+  function tickRest(){
+    if(!restTimer) return;
+    var remaining = (restTimer.endTime - Date.now()) / 1000;
+    if(remaining <= 0 && restTimer.state === "running"){
+      restTimer.state = "done";
+      clearInterval(restTimer.tickId);
+      playRestBeep();
+      vibrateRestAlert();
+      var bar = document.getElementById("rest-bar");
+      bar.classList.add("pulse", "done");
+      restTimer.autoHideId = setTimeout(stopRest, 12000);
+    }
+    renderRestBar();
+  }
+
+  function renderRestBar(){
+    var bar = document.getElementById("rest-bar");
+    if(!restTimer || !bar) return;
+    var remaining = restTimer.state === "done" ? 0 : (restTimer.endTime - Date.now()) / 1000;
+    bar.innerHTML = "<div class=\"rest-bar-inner\">"
+      + "<div class=\"rest-info\"><span class=\"rest-ex\">" + esc(restTimer.exName) + "</span>"
+      + "<span class=\"rest-clock\">" + (restTimer.state === "done" ? "Rest done" : fmtClock(remaining)) + "</span></div>"
+      + "<div class=\"rest-controls\">"
+      + (restTimer.state === "running"
+          ? "<button type=\"button\" class=\"btn-ghost rest-btn\" id=\"rest-plus15\">+15s</button>"
+            + "<button type=\"button\" class=\"btn-ghost rest-btn\" id=\"rest-plus30\">+30s</button>"
+          : "")
+      + "<button type=\"button\" class=\"btn-ghost rest-btn\" id=\"rest-skip\">" + (restTimer.state === "done" ? "Dismiss" : "Skip") + "</button>"
+      + "</div></div>";
+    var skipBtn = document.getElementById("rest-skip");
+    if(skipBtn) skipBtn.addEventListener("click", stopRest);
+    var p15 = document.getElementById("rest-plus15");
+    if(p15) p15.addEventListener("click", function(){ extendRest(15); });
+    var p30 = document.getElementById("rest-plus30");
+    if(p30) p30.addEventListener("click", function(){ extendRest(30); });
+  }
+
+  function extendRest(deltaSeconds){
+    if(!restTimer) return;
+    restTimer.endTime += deltaSeconds * 1000;
+    if(restTimer.state === "done"){
+      restTimer.state = "running";
+      document.getElementById("rest-bar").classList.remove("pulse", "done");
+      if(restTimer.autoHideId) clearTimeout(restTimer.autoHideId);
+      restTimer.tickId = setInterval(tickRest, 250);
+    }
+    renderRestBar();
+  }
+
+  function stopRest(){
+    if(!restTimer) return;
+    if(restTimer.tickId) clearInterval(restTimer.tickId);
+    if(restTimer.autoHideId) clearTimeout(restTimer.autoHideId);
+    restTimer = null;
+    var bar = document.getElementById("rest-bar");
+    bar.hidden = true;
+    bar.classList.remove("pulse", "done");
+    bar.innerHTML = "";
+  }
+
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible" && restTimer && restTimer.state === "running") tickRest();
+  });
 
   /* ---------------- persistence (this device's browser storage) ---------------- */
 
@@ -632,7 +838,19 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
         + "</button>"
         + "<div class=\"acc-body-wrap\"><div class=\"acc-body\"><div class=\"acc-body-inner\">"
         + (e.note ? "<p class=\"acc-note\">" + esc(e.note) + "</p>" : "")
+        + "<div class=\"rest-start-row\"><button type=\"button\" class=\"btn-ghost btn-rest-start\" data-ex=\"" + e.id + "\" data-name=\"" + esc(e.name) + "\" data-seconds=\"" + parseRestSeconds(e.rest) + "\">"
+        + "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><polyline points=\"12 7 12 12 15.5 14\"></polyline></svg>"
+        + "Start rest (" + esc(e.rest) + ")"
+        + "</button></div>"
         + fieldsHTML
+        + "<div class=\"form-ref\"><button type=\"button\" class=\"form-ref-toggle\" data-ref=\"" + e.id + "\" aria-expanded=\"false\">"
+        + "<span class=\"form-ref-chevron\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></span>"
+        + "Form reference"
+        + "</button>"
+        + "<div class=\"form-ref-body\" id=\"form-ref-body-" + e.id + "\" hidden>"
+        + "<a href=\"" + esc(formRefUrl(e.name)) + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + esc(e.name) + " on ExRx.net ↗</a>"
+        + "<p class=\"form-ref-note\">Opens in a new tab.</p>"
+        + "</div></div>"
         + "</div></div></div>"
         + "</div>";
     });
@@ -913,6 +1131,26 @@ footer.foot{ margin-top:40px; color:var(--text-muted); font-size:12px; text-alig
     });
     document.querySelectorAll(".reps-remove").forEach(function(btn){
       wireRemoveButton(btn);
+    });
+
+    document.querySelectorAll(".btn-rest-start").forEach(function(btn){
+      btn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var seconds = parseInt(btn.dataset.seconds, 10) || 90;
+        startRest(btn.dataset.ex, btn.dataset.name, seconds);
+      });
+    });
+
+    document.querySelectorAll(".form-ref-toggle").forEach(function(btn){
+      btn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        var body = document.getElementById("form-ref-body-" + btn.dataset.ref);
+        if(!body) return;
+        var willOpen = body.hidden;
+        body.hidden = !willOpen;
+        btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        btn.closest(".form-ref").classList.toggle("open", willOpen);
+      });
     });
 
     setSaveStatus("idle");
